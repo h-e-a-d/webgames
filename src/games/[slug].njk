@@ -1,0 +1,72 @@
+---
+pagination:
+  data: games
+  size: 1
+  alias: game
+permalink: /games/{{ game.slug }}/
+layout: base.njk
+collapsedSidebar: true
+---
+
+{% set title = game.title %}
+{% set description = game.description %}
+{% set related = games | reject("slug", game.slug) | selectattr("category", game.category) | list %}
+
+<div class="game-page">
+  <div class="game-area">
+
+    <!-- Breadcrumb -->
+    <div class="breadcrumb">
+      <a href="/">Home</a> /
+      <a href="/category/{{ game.category }}/">{{ game.category | capitalize }}</a> /
+      {{ game.title }}
+    </div>
+
+    <!-- Game iframe -->
+    <div class="game-frame-wrap" id="game-wrap">
+      <iframe
+        id="game-frame"
+        src="/games/{{ game.slug }}/game.html"
+        title="{{ game.title }}"
+        allowfullscreen
+        sandbox="allow-scripts allow-same-origin allow-popups"
+      ></iframe>
+      <button class="btn-fullscreen" id="fullscreen-btn">⛶ Fullscreen</button>
+    </div>
+
+    <!-- Controls -->
+    <div class="game-controls">
+      <button class="btn-secondary" id="restart-btn">♻️ Restart</button>
+      <span class="controls-hint">{{ game.controls }}</span>
+    </div>
+
+    <!-- Info -->
+    <div class="game-info">
+      <h1>{{ game.title }}</h1>
+      <div class="meta">{{ game.category | upper }}</div>
+      <div class="desc">{{ game.description }}</div>
+    </div>
+
+  </div>
+
+  <!-- Related games sidebar -->
+  <aside class="game-sidebar">
+    <h3>More {{ game.category }}</h3>
+    {% for r in related | slice(0, 4) %}
+    <a class="related-card" href="/games/{{ r.slug }}/">
+      <span class="emoji">{{ r.emoji }}</span>
+      <div>
+        <div class="rtitle">{{ r.title }}</div>
+        <div class="rcat">{{ r.category }}</div>
+      </div>
+    </a>
+    {% endfor %}
+  </aside>
+</div>
+
+{% set extraScripts %}
+<script>
+  const GAME_SLUG = '{{ game.slug }}';
+</script>
+<script src="/js/shell.js"></script>
+{% endset %}
