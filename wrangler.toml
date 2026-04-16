@@ -6,3 +6,6 @@ pages_build_output_dir = "_site"
 binding = "DB"
 database_name = "gaming-portal-db"
 database_id = "REPLACE_AFTER_CREATION"
+
+[vars]
+CLERK_JWKS_URL = "https://YOUR_CLERK_FRONTEND_API.clerk.accounts.dev/.well-known/jwks.json"
