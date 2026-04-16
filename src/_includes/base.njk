@@ -68,7 +68,7 @@
 <script>
   // Clerk auth init
   (async () => {
-    const clerk = new Clerk('{{ env.clerkPublishableKey }}');
+    const clerk = new Clerk('{{ env.clerkPublishableKey or "pk_test_REPLACE_ME" }}');
     await clerk.load();
     window.__clerk = clerk;
 
@@ -88,6 +88,9 @@
   })();
 </script>
 <script src="/js/portal.js"></script>
-{{ extraScripts | safe }}
+{% if includeShell %}
+<script>const GAME_SLUG = '{{ gameSlug }}';</script>
+<script src="/js/shell.js"></script>
+{% endif %}
 </body>
 </html>

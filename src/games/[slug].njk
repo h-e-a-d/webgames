@@ -6,10 +6,13 @@ pagination:
 permalink: /games/{{ game.slug }}/
 layout: base.njk
 collapsedSidebar: true
+includeShell: true
+eleventyComputed:
+  title: "{{ game.title }}"
+  description: "{{ game.description }}"
+  gameSlug: "{{ game.slug }}"
 ---
 
-{% set title = game.title %}
-{% set description = game.description %}
 {% set related = games | reject("slug", game.slug) | selectattr("category", game.category) | list %}
 
 <div class="game-page">
@@ -29,7 +32,7 @@ collapsedSidebar: true
         src="/games/{{ game.slug }}/game.html"
         title="{{ game.title }}"
         allowfullscreen
-        sandbox="allow-scripts allow-same-origin allow-popups"
+        sandbox="allow-scripts allow-popups"
       ></iframe>
       <button class="btn-fullscreen" id="fullscreen-btn">⛶ Fullscreen</button>
     </div>
@@ -63,10 +66,3 @@ collapsedSidebar: true
     {% endfor %}
   </aside>
 </div>
-
-{% set extraScripts %}
-<script>
-  const GAME_SLUG = '{{ game.slug }}';
-</script>
-<script src="/js/shell.js"></script>
-{% endset %}

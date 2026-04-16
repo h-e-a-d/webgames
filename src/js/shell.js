@@ -35,9 +35,14 @@ async function loadSave() {
   if (!res.ok) return;
   const { data } = await res.json();
   if (data) {
-    frame.addEventListener('load', () => {
-      frame.contentWindow.postMessage({ type: 'load-save', data }, '*');
-    }, { once: true });
+    const deliver = () => {
+      frame.contentWindow.postMessage({ type: 'load-save', data }, window.location.origin);
+    };
+    if (frame.contentWindow?.document?.readyState === 'complete') {
+      deliver();
+    } else {
+      frame.addEventListener('load', deliver, { once: true });
+    }
   }
 }
 
