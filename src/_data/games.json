@@ -22,5 +22,17 @@
     "featured": false,
     "howToPlay": "<p>Move your paddle left and right using the <strong>mouse</strong> or the <strong>left and right arrow keys</strong>. Bounce the ball off your paddle to hit and destroy the bricks at the top of the screen. Clear all the bricks to win the round.</p><p>If the ball falls past your paddle, the game ends — so keep your paddle under the ball at all times. The ball picks up speed as you progress, so stay focused. Aim for the corners and edges of the brick field to chain multiple hits in one pass.</p><p>Hitting bricks in the top rows scores more points than the lower rows, so try to work your way up as quickly as possible.</p>",
     "about": "<p>Breakout was originally designed by Steve Jobs and Steve Wozniak and released by Atari in 1976. It became one of the defining games of the golden age of arcade gaming and directly inspired countless descendants, including the <em>Arkanoid</em> series and modern brick-breaker mobile games.</p><p>The version on kloopik recreates the classic single-player experience in your browser using HTML5 Canvas. No plugins, no downloads — just the timeless satisfaction of clearing bricks one bounce at a time.</p>"
+  },
+  {
+    "slug": "minesweeper",
+    "title": "Minesweeper",
+    "category": "puzzle",
+    "description": "Clear the minefield without triggering a single bomb. Flag suspects, trust your math.",
+    "emoji": "💣",
+    "controls": "Left click to reveal, right click to flag/unflag",
+    "new": true,
+    "featured": false,
+    "howToPlay": "<p>Left-click any cell to reveal it. If the cell is clear, a number appears showing how many of its 8 neighbours contain mines — use these numbers to deduce which cells are safe. Right-click an unrevealed cell to place or remove a flag on a suspected mine.</p><p>Your <strong>first click is always safe</strong> — mines are placed after you click, so you can never lose immediately. When a cell with <strong>zero</strong> adjacent mines is revealed, the board automatically flood-fills and uncovers all connected safe cells around it.</p><p>You win when every non-mine cell has been revealed. The timer starts on your first click — try to beat your best time. Choose <strong>Beginner</strong> (9×9, 10 mines), <strong>Intermediate</strong> (16×16, 40 mines), or <strong>Expert</strong> (30×16, 99 mines) from the buttons above the board.</p>",
+    "about": "<p>Minesweeper was bundled with Microsoft Windows from version 3.1 (1992) through Windows 7, making it one of the most-played computer games in history. The mechanics originate from earlier mainframe games of the 1960s and 1970s, but the Windows edition standardised the grid sizes and mine counts that are still considered classic today.</p><p>The kloopik version is a faithful pixel-perfect HTML5 recreation with three selectable difficulty levels, first-click safety, instant flood-fill, and a best-time leaderboard stored in your browser session.</p>"
   }
 ]

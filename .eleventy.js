@@ -12,7 +12,7 @@ module.exports = function (eleventyConfig) {
 
   // Expose env vars to templates
   eleventyConfig.addGlobalData("env", {
-    clerkPublishableKey: process.env.CLERK_PUBLISHABLE_KEY || '',
+    clerkPublishableKey: process.env.CLERK_PUBLISHABLE_KEY || 'pk_test_Y29zbWljLXJvZGVudC0zOC5jbGVyay5hY2NvdW50cy5kZXYk',
     siteUrl: (process.env.SITE_URL || 'https://www.kloopik.com').replace(/\/$/, ''),
   });
 

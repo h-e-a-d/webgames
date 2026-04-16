@@ -116,16 +116,18 @@ eleventyComputed:
   <!-- Related games sidebar -->
   <aside class="game-sidebar">
     <h3>More {{ game.category }}</h3>
-    {% for r in related | slice(0, 4) %}
-    <a class="related-card" href="/games/{{ r.slug }}/">
-      <span class="emoji">{{ r.emoji }}</span>
-      <div>
-        <div class="rtitle">{{ r.title }}</div>
-        <div class="rcat">{{ r.category }}</div>
-      </div>
-    </a>
-    {% else %}
-    <p class="no-related">More games coming soon.</p>
-    {% endfor %}
+    <div class="related-list">
+      {% for r in related | slice(0, 4) %}
+      <a class="related-card" href="/games/{{ r.slug }}/">
+        <span class="emoji">{{ r.emoji }}</span>
+        <div>
+          <div class="rtitle">{{ r.title }}</div>
+          <div class="rcat">{{ r.category }}</div>
+        </div>
+      </a>
+      {% else %}
+      <p class="no-related">More games coming soon.</p>
+      {% endfor %}
+    </div>
   </aside>
 </div>

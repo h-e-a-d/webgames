@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minesweeper</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; font-family: 'Courier New', monospace; }
+    canvas { display: block; image-rendering: pixelated; }
+
+    /* ── AdSense overlay (pre-roll / interstitial) ─────────────── */
+    #ad-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.92);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      gap: 16px;
+    }
+    #ad-overlay.hidden { display: none; }
+    #ad-container { width: 320px; min-height: 50px; }
+    #ad-skip {
+      background: none;
+      border: 1px solid #444;
+      padding: 6px 16px;
+      border-radius: 4px;
+      color: #fff;
+      font-family: sans-serif;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    /* ── Difficulty selector ───────────────────────────────────── */
+    #difficulty-bar {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    #difficulty-bar button {
+      background: none;
+      border: 1px solid #444;
+      color: #888;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      padding: 4px 12px;
+      cursor: pointer;
+      letter-spacing: 0.05em;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    #difficulty-bar button:hover { color: #fff; border-color: #888; }
+    #difficulty-bar button.active { color: #5c5cff; border-color: #5c5cff; }
+  </style>
+  <!-- Google AdSense for Games -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-REPLACE_WITH_YOUR_PUBLISHER_ID" crossorigin="anonymous"></script>
+</head>
+<body>
+
+<!-- Ad overlay (shown for pre-roll and interstitials) -->
+<div id="ad-overlay">
+  <ins class="adsbygoogle"
+       id="ad-container"
+       style="display:block"
+       data-ad-client="ca-pub-REPLACE_WITH_YOUR_PUBLISHER_ID"
+       data-ad-slot="REPLACE_WITH_AD_SLOT_ID"
+       data-ad-format="auto"
+       data-full-width-responsive="true"></ins>
+  <button id="ad-skip">Skip Ad ›</button>
+</div>
+
+<!-- Difficulty selector -->
+<div id="difficulty-bar">
+  <button id="btn-beginner" class="active">BEGINNER</button>
+  <button id="btn-intermediate">INTERMEDIATE</button>
+  <button id="btn-expert">EXPERT</button>
+</div>
+
+<canvas id="canvas"></canvas>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// GAME SDK — copy verbatim into every game, do not modify
+// ═══════════════════════════════════════════════════════════════════
+
+const GameSDK = (() => {
+  let saveTimer = null;
+  const SAVE_DEBOUNCE_MS = 2000;
+
+  // Receive load-save from parent shell
+  window.addEventListener('message', (e) => {
+    if (e.data?.type === 'load-save') {
+      if (typeof onSaveLoaded === 'function') onSaveLoaded(e.data.data);
+    }
+  });
+
+  function save(data) {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      parent.postMessage({ type: 'save', data }, '*');
+    }, SAVE_DEBOUNCE_MS);
+  }
+
+  // ── Ad management ──────────────────────────────────────────────
+  const overlay = document.getElementById('ad-overlay');
+  const skipBtn = document.getElementById('ad-skip');
+  let adResolve = null;
+  let skipDelay = 5;
+
+  skipBtn.disabled = true;
+  skipBtn.textContent = `Skip Ad (${skipDelay})`;
+
+  function runAdTimer() {
+    const t = setInterval(() => {
+      skipDelay--;
+      skipBtn.textContent = skipDelay > 0 ? `Skip Ad (${skipDelay})` : 'Skip Ad ›';
+      if (skipDelay <= 0) {
+        skipBtn.disabled = false;
+        clearInterval(t);
+      }
+    }, 1000);
+  }
+
+  function showAd() {
+    return new Promise((resolve) => {
+      adResolve = resolve;
+      overlay.classList.remove('hidden');
+      skipDelay = 5;
+      skipBtn.disabled = true;
+      skipBtn.textContent = `Skip Ad (${skipDelay})`;
+      runAdTimer();
+      try { (adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) {}
+    });
+  }
+
+  skipBtn.addEventListener('click', () => {
+    overlay.classList.add('hidden');
+    if (adResolve) { adResolve(); adResolve = null; }
+  });
+
+  return { save, showAd };
+})();
+
+// ═══════════════════════════════════════════════════════════════════
+// MINESWEEPER GAME
+// ═══════════════════════════════════════════════════════════════════
+
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+// ── Difficulty configs ──────────────────────────────────────────
+const DIFFICULTIES = {
+  beginner:     { cols: 9,  rows: 9,  mines: 10 },
+  intermediate: { cols: 16, rows: 16, mines: 40 },
+  expert:       { cols: 30, rows: 16, mines: 99 },
+};
+
+const CELL = 32;           // px per cell
+const HUD_H = 56;          // px reserved above grid for HUD
+
+// ── Game state ──────────────────────────────────────────────────
+let difficulty   = 'beginner';
+let COLS, ROWS, MINE_COUNT;
+let grid         = [];     // flat array [row * COLS + col]
+let revealed     = [];     // bool
+let flagged      = [];     // bool
+let minePos      = new Set();
+let gamePhase    = 'idle'; // idle | playing | won | lost
+let firstClick   = true;
+let elapsedSec   = 0;
+let timerStart   = null;
+let timerInterval= null;
+let bestTimes    = { beginner: null, intermediate: null, expert: null };
+
+// ── Save / Load ─────────────────────────────────────────────────
+function onSaveLoaded(data) {
+  bestTimes.beginner     = data.bestTimes?.beginner     ?? null;
+  bestTimes.intermediate = data.bestTimes?.intermediate ?? null;
+  bestTimes.expert       = data.bestTimes?.expert       ?? null;
+}
+
+// ── Difficulty UI ───────────────────────────────────────────────
+document.getElementById('btn-beginner').addEventListener('click', () => setDifficulty('beginner'));
+document.getElementById('btn-intermediate').addEventListener('click', () => setDifficulty('intermediate'));
+document.getElementById('btn-expert').addEventListener('click', () => setDifficulty('expert'));
+
+function setDifficulty(d) {
+  difficulty = d;
+  document.querySelectorAll('#difficulty-bar button').forEach(b => b.classList.remove('active'));
+  document.getElementById('btn-' + d).classList.add('active');
+  startGame();
+}
+
+// ── Grid helpers ─────────────────────────────────────────────────
+function idx(r, c) { return r * COLS + c; }
+
+function neighbors(r, c) {
+  const out = [];
+  for (let dr = -1; dr <= 1; dr++) {
+    for (let dc = -1; dc <= 1; dc++) {
+      if (dr === 0 && dc === 0) continue;
+      const nr = r + dr, nc = c + dc;
+      if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS) out.push([nr, nc]);
+    }
+  }
+  return out;
+}
+
+function adjacentMineCount(r, c) {
+  return neighbors(r, c).filter(([nr, nc]) => minePos.has(idx(nr, nc))).length;
+}
+
+// ── Mine placement (first-click safe) ───────────────────────────
+function placeMines(safeR, safeC) {
+  minePos.clear();
+  // Build set of cells that cannot be mines (the clicked cell + its neighbors)
+  const safe = new Set();
+  safe.add(idx(safeR, safeC));
+  neighbors(safeR, safeC).forEach(([nr, nc]) => safe.add(idx(nr, nc)));
+
+  const candidates = [];
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++)
+      if (!safe.has(idx(r, c))) candidates.push(idx(r, c));
+
+  // Fisher-Yates shuffle, take first MINE_COUNT
+  for (let i = candidates.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+  }
+  for (let i = 0; i < MINE_COUNT; i++) minePos.add(candidates[i]);
+
+  // Pre-compute neighbor counts into grid
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++)
+      grid[idx(r, c)] = minePos.has(idx(r, c)) ? -1 : adjacentMineCount(r, c);
+}
+
+// ── Flood-fill reveal ────────────────────────────────────────────
+function floodReveal(r, c) {
+  const queue = [[r, c]];
+  while (queue.length) {
+    const [cr, cc] = queue.shift();
+    const i = idx(cr, cc);
+    if (revealed[i]) continue;
+    revealed[i] = true;
+    if (grid[i] === 0) {
+      neighbors(cr, cc).forEach(([nr, nc]) => {
+        if (!revealed[idx(nr, nc)] && !flagged[idx(nr, nc)]) queue.push([nr, nc]);
+      });
+    }
+  }
+}
+
+// ── Win check ───────────────────────────────────────────────────
+function checkWin() {
+  const total = ROWS * COLS;
+  let revealedCount = 0;
+  for (let i = 0; i < total; i++) if (revealed[i]) revealedCount++;
+  return revealedCount === total - MINE_COUNT;
+}
+
+// ── Timer ────────────────────────────────────────────────────────
+function startTimer() {
+  timerStart = Date.now();
+  timerInterval = setInterval(() => {
+    elapsedSec = Math.floor((Date.now() - timerStart) / 1000);
+    render();
+  }, 250);
+}
+
+function stopTimer() {
+  clearInterval(timerInterval);
+  timerInterval = null;
+}
+
+// ── Start / reset ────────────────────────────────────────────────
+function startGame() {
+  const cfg = DIFFICULTIES[difficulty];
+  COLS = cfg.cols;
+  ROWS = cfg.rows;
+  MINE_COUNT = cfg.mines;
+
+  const total = ROWS * COLS;
+  grid     = new Array(total).fill(0);
+  revealed = new Array(total).fill(false);
+  flagged  = new Array(total).fill(false);
+  minePos.clear();
+
+  gamePhase  = 'idle';
+  firstClick = true;
+  elapsedSec = 0;
+  stopTimer();
+
+  canvas.width  = COLS * CELL;
+  canvas.height = ROWS * CELL + HUD_H;
+
+  render();
+}
+
+// ── Handle win ───────────────────────────────────────────────────
+async function handleWin() {
+  stopTimer();
+  gamePhase = 'won';
+
+  if (bestTimes[difficulty] === null || elapsedSec < bestTimes[difficulty]) {
+    bestTimes[difficulty] = elapsedSec;
+    GameSDK.save({ bestTimes });
+  }
+
+  render();
+  await GameSDK.showAd();
+  startGame();
+}
+
+// ── Handle loss ──────────────────────────────────────────────────
+async function handleLoss() {
+  stopTimer();
+  gamePhase = 'lost';
+  // Reveal all mines
+  minePos.forEach(i => { revealed[i] = true; });
+  render();
+  await GameSDK.showAd();
+  startGame();
+}
+
+// ── Input ────────────────────────────────────────────────────────
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+canvas.addEventListener('mousedown', async (e) => {
+  if (gamePhase === 'won' || gamePhase === 'lost') return;
+
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top - HUD_H;
+  if (my < 0) return;
+
+  const c = Math.floor(mx / CELL);
+  const r = Math.floor(my / CELL);
+  if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return;
+
+  const i = idx(r, c);
+
+  if (e.button === 2) {
+    // Right click: flag / unflag (only on unrevealed cells)
+    if (!revealed[i]) {
+      flagged[i] = !flagged[i];
+      render();
+    }
+    return;
+  }
+
+  if (e.button !== 0) return;
+  if (revealed[i] || flagged[i]) return;
+
+  // First click: place mines safely, start timer
+  if (firstClick) {
+    firstClick = false;
+    gamePhase  = 'playing';
+    placeMines(r, c);
+    startTimer();
+  }
+
+  if (minePos.has(i)) {
+    await handleLoss();
+    return;
+  }
+
+  floodReveal(r, c);
+  render();
+
+  if (checkWin()) {
+    await handleWin();
+  }
+});
+
+// ── Color map for numbers ────────────────────────────────────────
+const NUM_COLORS = ['', '#5c5cff', '#00c853', '#f44336', '#880e4f', '#b71c1c', '#00838f', '#000', '#616161'];
+
+// ── Render ───────────────────────────────────────────────────────
+function render() {
+  ctx.fillStyle = '#0a0a0f';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  drawHUD();
+  drawGrid();
+}
+
+function drawHUD() {
+  const flagCount = flagged.filter(Boolean).length;
+  const remaining = MINE_COUNT - flagCount;
+  const timeStr   = String(elapsedSec).padStart(3, '0');
+  const bestKey   = bestTimes[difficulty];
+  const bestStr   = bestKey !== null ? String(bestKey).padStart(3, '0') + 's' : '---';
+
+  // Left: mines remaining
+  ctx.fillStyle = '#888';
+  ctx.font = '11px monospace';
+  ctx.textAlign = 'left';
+  ctx.fillText('MINES', 8, 18);
+  ctx.fillStyle = remaining < 0 ? '#f44336' : '#fff';
+  ctx.font = 'bold 22px monospace';
+  ctx.fillText(String(remaining).padStart(3, ' '), 8, 44);
+
+  // Center: timer
+  ctx.fillStyle = '#888';
+  ctx.font = '11px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('TIME', canvas.width / 2, 18);
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 22px monospace';
+  ctx.fillText(timeStr, canvas.width / 2, 44);
+
+  // Right: best time
+  ctx.fillStyle = '#888';
+  ctx.font = '11px monospace';
+  ctx.textAlign = 'right';
+  ctx.fillText('BEST', canvas.width - 8, 18);
+  ctx.fillStyle = '#5c5cff';
+  ctx.font = 'bold 22px monospace';
+  ctx.fillText(bestStr, canvas.width - 8, 44);
+
+  ctx.textAlign = 'left';
+
+  // Thin separator line
+  ctx.strokeStyle = '#222';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(0, HUD_H - 1);
+  ctx.lineTo(canvas.width, HUD_H - 1);
+  ctx.stroke();
+}
+
+function drawGrid() {
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      drawCell(r, c);
+    }
+  }
+}
+
+function drawCell(r, c) {
+  const i   = idx(r, c);
+  const x   = c * CELL;
+  const y   = r * CELL + HUD_H;
+  const rev = revealed[i];
+  const flg = flagged[i];
+  const val = grid[i];
+
+  // Cell background
+  if (rev) {
+    ctx.fillStyle = minePos.has(i) ? '#5c0a0a' : '#1a1a2e';
+  } else {
+    ctx.fillStyle = '#2a2a3e';
+  }
+  ctx.fillRect(x, y, CELL, CELL);
+
+  // Cell border
+  ctx.strokeStyle = '#111';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(x + 0.5, y + 0.5, CELL - 1, CELL - 1);
+
+  if (!rev) {
+    // Unrevealed highlight (subtle bevel effect)
+    ctx.fillStyle = 'rgba(255,255,255,0.04)';
+    ctx.fillRect(x + 1, y + 1, CELL - 2, CELL - 2);
+
+    if (flg) {
+      drawFlag(x, y);
+    }
+    return;
+  }
+
+  // Revealed cell content
+  if (minePos.has(i)) {
+    drawMine(x, y);
+  } else if (val > 0) {
+    ctx.fillStyle = NUM_COLORS[val] || '#fff';
+    ctx.font = 'bold 16px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(String(val), x + CELL / 2, y + CELL / 2);
+    ctx.textBaseline = 'alphabetic';
+    ctx.textAlign = 'left';
+  }
+}
+
+function drawFlag(x, y) {
+  const cx = x + CELL / 2;
+  const cy = y + CELL / 2;
+
+  // Flag pole
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy + 8);
+  ctx.lineTo(cx, cy - 7);
+  ctx.stroke();
+
+  // Flag triangle
+  ctx.fillStyle = '#f44336';
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - 7);
+  ctx.lineTo(cx + 9, cy - 2);
+  ctx.lineTo(cx, cy + 1);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawMine(x, y) {
+  const cx = x + CELL / 2;
+  const cy = y + CELL / 2;
+  const r  = CELL * 0.28;
+
+  // Mine body
+  ctx.fillStyle = '#222';
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Spikes
+  ctx.strokeStyle = '#222';
+  ctx.lineWidth = 2;
+  for (let a = 0; a < 8; a++) {
+    const angle = (a / 8) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.moveTo(cx + Math.cos(angle) * r * 0.7, cy + Math.sin(angle) * r * 0.7);
+    ctx.lineTo(cx + Math.cos(angle) * (r + 4),  cy + Math.sin(angle) * (r + 4));
+    ctx.stroke();
+  }
+
+  // Shine dot
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.beginPath();
+  ctx.arc(cx - r * 0.3, cy - r * 0.3, r * 0.2, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+// ── Auto-save on tab switch ──────────────────────────────────────
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) GameSDK.save({ bestTimes });
+});
+
+// ── Bootstrap ───────────────────────────────────────────────────
+async function init() {
+  await GameSDK.showAd();
+  startGame();
+}
+
+init();
+</script>
+</body>
+</html>
