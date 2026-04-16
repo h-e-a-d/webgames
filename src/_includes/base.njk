@@ -92,7 +92,7 @@
       <input class="search" type="search" placeholder="Search games..." id="search-input">
       <!-- Auth slots — fixed-width container prevents CLS -->
       <div class="auth-slot">
-        <div id="auth-signed-out" class="hidden">
+        <div id="auth-signed-out">
           <button class="btn-signin" id="sign-in-btn">Sign In</button>
         </div>
         <div id="auth-signed-in" class="hidden">
@@ -161,10 +161,9 @@
       clerk.load().then(function () {
         window.__clerk = clerk;
         if (clerk.user) {
+          out.classList.add('hidden');
           inn.classList.remove('hidden');
           nameEl.textContent = clerk.user.firstName || clerk.user.emailAddresses[0].emailAddress;
-        } else {
-          out.classList.remove('hidden');
         }
         document.getElementById('sign-in-btn')?.addEventListener('click', function () { clerk.openSignIn(); });
         document.getElementById('sign-out-btn')?.addEventListener('click', function () { clerk.signOut().then(function () { location.reload(); }); });
