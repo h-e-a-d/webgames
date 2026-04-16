@@ -1,0 +1,42 @@
+---
+pagination:
+  data: categoryPages
+  size: 1
+  alias: catPage
+permalink: /category/{{ catPage.slug }}/
+layout: base.njk
+eleventyComputed:
+  title: "{{ catPage.label }} Games"
+  description: "Play free {{ catPage.label | lower }} games online — no download required. Browse all {{ catPage.label | lower }} games on kloopik."
+---
+
+{% set categoryGames = games | selectattr("category", catPage.slug) | list %}
+
+<div class="listing-page">
+  <div class="listing-header">
+    <h1>{{ catPage.label }} Games</h1>
+    <p class="listing-desc">Free {{ catPage.label | lower }} games you can play right in your browser. No download, no install.</p>
+  </div>
+
+  {% if categoryGames.length %}
+  <div class="games-grid large">
+    {% for game in categoryGames %}
+    <a class="game-card" href="/games/{{ game.slug }}/">
+      <div class="thumb">
+        {% if game.thumbnail %}
+          <img src="/public/thumbnails/{{ game.slug }}.jpg" alt="{{ game.title }}" loading="lazy">
+        {% else %}
+          <span class="emoji">{{ game.emoji }}</span>
+        {% endif %}
+      </div>
+      <div class="info">
+        <div class="title">{{ game.title }}</div>
+        <div class="cat">{{ game.category }}</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="empty-state">No {{ catPage.label | lower }} games yet &mdash; check back soon!</p>
+  {% endif %}
+</div>

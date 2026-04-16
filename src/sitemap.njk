@@ -9,6 +9,29 @@ eleventyExcludeFromCollections: true
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
+  <url>
+    <loc>{{ env.siteUrl }}/all/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>{{ env.siteUrl }}/new/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>{{ env.siteUrl }}/popular/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  {% set categories = ["arcade","puzzle","card","action","strategy","runner","sports","shooting"] %}
+  {% for cat in categories %}
+  <url>
+    <loc>{{ env.siteUrl }}/category/{{ cat }}/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  {% endfor %}
   {% for game in games %}
   <url>
     <loc>{{ env.siteUrl }}/games/{{ game.slug }}/</loc>
@@ -16,4 +39,19 @@ eleventyExcludeFromCollections: true
     <priority>0.8</priority>
   </url>
   {% endfor %}
+  <url>
+    <loc>{{ env.siteUrl }}/about/</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>{{ env.siteUrl }}/privacy/</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>{{ env.siteUrl }}/terms/</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
 </urlset>

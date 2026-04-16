@@ -1,0 +1,34 @@
+---
+layout: base.njk
+title: New Games
+description: "The latest free browser games on kloopik — freshly added, play instantly."
+permalink: /new/
+---
+
+{% set newGames = games | selectattr("new") | list %}
+
+<div class="listing-page">
+  <div class="listing-header">
+    <h1>New Games</h1>
+    <p class="listing-desc">Recently added games on kloopik, free to play in your browser.</p>
+  </div>
+  <div class="games-grid large">
+    {% for game in newGames %}
+    <a class="game-card" href="/games/{{ game.slug }}/">
+      <div class="thumb">
+        {% if game.thumbnail %}
+          <img src="/public/thumbnails/{{ game.slug }}.jpg" alt="{{ game.title }}" loading="lazy">
+        {% else %}
+          <span class="emoji">{{ game.emoji }}</span>
+        {% endif %}
+      </div>
+      <div class="info">
+        <div class="title">{{ game.title }}</div>
+        <div class="cat">{{ game.category }}</div>
+      </div>
+    </a>
+    {% else %}
+    <p class="empty-state">No new games right now &mdash; check back soon!</p>
+    {% endfor %}
+  </div>
+</div>

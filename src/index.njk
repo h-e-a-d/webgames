@@ -1,10 +1,17 @@
 ---
 layout: base.njk
-title: Home
+title: Free Browser Games
+description: "Free browser games — play Snake, Breakout, Arcade, Puzzle and more instantly. No download, no install, just play."
 ---
 
 {% set topPicks = games | selectattr("featured") | list %}
 {% set newGames = games | selectattr("new") | list %}
+
+<h1 class="sr-only">Free Browser Games — Play Instantly on kloopik</h1>
+
+<div class="homepage-intro">
+  <p>Hand-picked arcade classics and casual games, playable right in your browser. No download, no account required &mdash; just pick a game and play.</p>
+</div>
 
 <!-- Top picks row -->
 <div class="row">

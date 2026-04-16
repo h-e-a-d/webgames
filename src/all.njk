@@ -1,0 +1,30 @@
+---
+layout: base.njk
+title: All Games
+description: "Browse all free browser games on kloopik — play instantly, no download required."
+permalink: /all/
+---
+
+<div class="listing-page">
+  <div class="listing-header">
+    <h1>All Games</h1>
+    <p class="listing-desc">Every game on kloopik, free to play in your browser.</p>
+  </div>
+  <div class="games-grid large" id="all-games-grid">
+    {% for game in games %}
+    <a class="game-card" href="/games/{{ game.slug }}/" data-title="{{ game.title | lower }}" data-category="{{ game.category }}">
+      <div class="thumb">
+        {% if game.thumbnail %}
+          <img src="/public/thumbnails/{{ game.slug }}.jpg" alt="{{ game.title }}" loading="lazy">
+        {% else %}
+          <span class="emoji">{{ game.emoji }}</span>
+        {% endif %}
+      </div>
+      <div class="info">
+        <div class="title">{{ game.title }}</div>
+        <div class="cat">{{ game.category }}</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</div>

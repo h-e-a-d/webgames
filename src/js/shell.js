@@ -1,6 +1,7 @@
 // shell.js — runs on game detail pages
 // Handles postMessage from the game iframe + save API calls
 
+const GAME_SLUG = document.body.dataset.gameSlug || '';
 const frame = document.getElementById('game-frame');
 const restartBtn = document.getElementById('restart-btn');
 const fullscreenBtn = document.getElementById('fullscreen-btn');

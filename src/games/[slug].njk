@@ -7,7 +7,7 @@ permalink: /games/{{ game.slug }}/
 layout: base.njk
 collapsedSidebar: true
 includeShell: true
-ogType: game
+ogType: website
 eleventyComputed:
   title: "{{ game.title }}"
   description: "{{ game.description }}"
@@ -18,19 +18,49 @@ eleventyComputed:
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "VideoGame",
-  "name": {{ game.title | jsEscape | safe }},
-  "description": {{ game.description | jsEscape | safe }},
-  "url": {{ (env.siteUrl + "/games/" + game.slug + "/") | jsEscape | safe }},
-  "genre": {{ game.category | capitalize | jsEscape | safe }},
-  "gamePlatform": "Web browser",
-  "applicationCategory": "Game",
-  "operatingSystem": "Any",
-  "offers": {
-    "@type": "Offer",
-    "price": "0",
-    "priceCurrency": "USD"
-  }
+  "@graph": [
+    {
+      "@type": "VideoGame",
+      "@id": "{{ env.siteUrl }}/games/{{ game.slug }}/#game",
+      "name": {{ game.title | jsEscape | safe }},
+      "description": {{ game.description | jsEscape | safe }},
+      "url": {{ (env.siteUrl + "/games/" + game.slug + "/") | jsEscape | safe }},
+      "genre": {{ game.category | capitalize | jsEscape | safe }},
+      "gamePlatform": "Web browser",
+      "applicationCategory": "Game",
+      "operatingSystem": "Any",
+      "inLanguage": "en",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD",
+        "availability": "https://schema.org/OnlineOnly"
+      }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": {{ env.siteUrl | jsEscape | safe }}
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": {{ game.category | capitalize | jsEscape | safe }},
+          "item": {{ (env.siteUrl + "/category/" + game.category + "/") | jsEscape | safe }}
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": {{ game.title | jsEscape | safe }},
+          "item": {{ (env.siteUrl + "/games/" + game.slug + "/") | jsEscape | safe }}
+        }
+      ]
+    }
+  ]
 }
 </script>
 
@@ -55,12 +85,12 @@ eleventyComputed:
         allowfullscreen
         sandbox="allow-scripts allow-popups"
       ></iframe>
-      <button class="btn-fullscreen" id="fullscreen-btn">⛶ Fullscreen</button>
+      <button class="btn-fullscreen" id="fullscreen-btn">&#9974; Fullscreen</button>
     </div>
 
     <!-- Controls -->
     <div class="game-controls">
-      <button class="btn-secondary" id="restart-btn">♻️ Restart</button>
+      <button class="btn-secondary" id="restart-btn">&#9851;&#65039; Restart</button>
       <span class="controls-hint">{{ game.controls }}</span>
     </div>
 
@@ -69,6 +99,16 @@ eleventyComputed:
       <h1>{{ game.title }}</h1>
       <div class="meta">{{ game.category | upper }}</div>
       <div class="desc">{{ game.description }}</div>
+
+      {% if game.howToPlay %}
+      <h2 class="game-section-heading">How to Play {{ game.title }}</h2>
+      <div class="game-section-body">{{ game.howToPlay | safe }}</div>
+      {% endif %}
+
+      {% if game.about %}
+      <h2 class="game-section-heading">About {{ game.title }}</h2>
+      <div class="game-section-body">{{ game.about | safe }}</div>
+      {% endif %}
     </div>
 
   </div>
@@ -84,6 +124,8 @@ eleventyComputed:
         <div class="rcat">{{ r.category }}</div>
       </div>
     </a>
+    {% else %}
+    <p class="no-related">More games coming soon.</p>
     {% endfor %}
   </aside>
 </div>

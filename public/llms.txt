@@ -1,0 +1,29 @@
+# kloopik
+kloopik is a free browser gaming platform offering casual and arcade-style games across 8 categories. All games run entirely in the browser using HTML5 — no download, no install, no account required. The platform is built for desktop and mobile.
+
+## Categories
+Arcade, Puzzle, Card, Action, Strategy, Runner, Sports, Shooting
+
+## Games
+- /games/snake/ — Snake: classic arcade game where you guide a growing snake to eat food without hitting walls or yourself. Keyboard controlled (arrow keys or WASD).
+- /games/breakout/ — Breakout: destroy all bricks using a bouncing ball and a paddle. Mouse or arrow key controlled.
+
+## Key pages
+- / — Homepage with featured and new games
+- /all/ — Browse all games
+- /new/ — Recently added games
+- /popular/ — Most popular games
+- /category/arcade/ — Arcade games
+- /category/puzzle/ — Puzzle games
+- /category/card/ — Card games
+- /category/action/ — Action games
+- /category/strategy/ — Strategy games
+- /category/runner/ — Runner games
+- /category/sports/ — Sports games
+- /category/shooting/ — Shooting games
+- /about/ — About kloopik
+- /privacy/ — Privacy Policy
+- /terms/ — Terms of Service
+
+## Licensing
+Content on kloopik may be used for AI retrieval and citation (surfacing game recommendations, answering "how to play" questions, etc.). Training use on game content requires explicit written permission from kloopik. Contact: hello@kloopik.com

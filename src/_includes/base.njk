@@ -4,45 +4,83 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{ title }} | kloopik</title>
-  {% if description %}
-  <meta name="description" content="{{ description }}">
-  {% endif %}
+  <meta name="description" content="{{ description or 'Free browser games — play Snake, Breakout, Arcade, Puzzle and more instantly. No download required.' }}">
   <meta property="og:title"       content="{{ title }} | kloopik">
-  <meta property="og:description" content="{{ description or 'Free HTML5 games — play instantly in your browser, no download required.' }}">
+  <meta property="og:description" content="{{ description or 'Free browser games — play Snake, Breakout, Arcade, Puzzle and more instantly. No download required.' }}">
   <meta property="og:type"        content="{{ ogType or 'website' }}">
-  <meta property="og:url"         content="{{ env.siteUrl or 'https://yourdomain.com' }}{{ page.url }}">
-  {% if ogImage %}<meta property="og:image" content="{{ env.siteUrl or 'https://yourdomain.com' }}{{ ogImage }}">{% endif %}
+  <meta property="og:url"         content="{{ env.siteUrl }}{{ page.url }}">
+  {% if ogImage %}<meta property="og:image" content="{{ env.siteUrl }}{{ ogImage }}">{% endif %}
   <meta name="twitter:card"       content="summary_large_image">
-  <link rel="canonical"           href="{{ env.siteUrl or 'https://yourdomain.com' }}{{ page.url }}">
+  <link rel="canonical"           href="{{ env.siteUrl }}{{ page.url }}">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
   <link rel="stylesheet" href="/css/main.css">
-  <!-- Clerk auth -->
-  <script src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@5/dist/clerk.browser.js" crossorigin="anonymous"></script>
+  <!-- Clerk auth — deferred so it doesn't block rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@5/dist/clerk.browser.js" defer crossorigin="anonymous"></script>
+
+  {% if page.url == "/" %}
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "{{ env.siteUrl }}/#website",
+        "url": "{{ env.siteUrl }}/",
+        "name": "kloopik",
+        "description": "Free browser games — play instantly, no download required.",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": {
+            "@type": "EntryPoint",
+            "urlTemplate": "{{ env.siteUrl }}/all/?q={search_term_string}"
+          },
+          "query-input": "required name=search_term_string"
+        }
+      },
+      {
+        "@type": "Organization",
+        "@id": "{{ env.siteUrl }}/#organization",
+        "name": "kloopik",
+        "url": "{{ env.siteUrl }}/"
+      }
+    ]
+  }
+  </script>
+  {% endif %}
 </head>
-<body>
+<body data-game-slug="{{ gameSlug }}">
 <div class="layout">
+
+  <!-- Mobile nav toggle -->
+  <button class="mobile-nav-toggle" id="mobile-nav-toggle" aria-label="Toggle navigation">&#9776;</button>
 
   <!-- Sidebar -->
   <aside class="sidebar {% if collapsedSidebar %}collapsed{% endif %}" id="sidebar">
     <a href="/" class="logo">KLOOPIK</a>
     <nav>
       <a href="/" class="{% if page.url == '/' %}active{% endif %}">
-        <span class="icon">🏠</span><span class="label">Home</span>
+        <span class="icon">&#127968;</span><span class="label">Home</span>
       </a>
-      <a href="/popular/"><span class="icon">🔥</span><span class="label">Popular</span></a>
-      <a href="/new/"><span class="icon">⭐</span><span class="label">New</span></a>
-      <a href="/random/"><span class="icon">🎲</span><span class="label">Random</span></a>
+      <a href="/popular/"><span class="icon">&#128293;</span><span class="label">Popular</span></a>
+      <a href="/new/"><span class="icon">&#11088;</span><span class="label">New</span></a>
+      <a href="/all/"><span class="icon">&#127918;</span><span class="label">All Games</span></a>
     </nav>
     <hr>
     <div class="section-label">Categories</div>
     <nav>
-      <a href="/category/arcade/"><span class="icon">🕹️</span><span class="label">Arcade</span></a>
-      <a href="/category/puzzle/"><span class="icon">🧩</span><span class="label">Puzzle</span></a>
-      <a href="/category/card/"><span class="icon">🃏</span><span class="label">Card</span></a>
-      <a href="/category/action/"><span class="icon">⚔️</span><span class="label">Action</span></a>
-      <a href="/category/strategy/"><span class="icon">♟️</span><span class="label">Strategy</span></a>
-      <a href="/category/runner/"><span class="icon">🏃</span><span class="label">Runner</span></a>
-      <a href="/category/sports/"><span class="icon">⚽</span><span class="label">Sports</span></a>
-      <a href="/category/shooting/"><span class="icon">🎯</span><span class="label">Shooting</span></a>
+      <a href="/category/arcade/"><span class="icon">&#128377;&#65039;</span><span class="label">Arcade</span></a>
+      <a href="/category/puzzle/"><span class="icon">&#129513;</span><span class="label">Puzzle</span></a>
+      <a href="/category/card/"><span class="icon">&#127183;</span><span class="label">Card</span></a>
+      <a href="/category/action/"><span class="icon">&#9876;&#65039;</span><span class="label">Action</span></a>
+      <a href="/category/strategy/"><span class="icon">&#9823;&#65039;</span><span class="label">Strategy</span></a>
+      <a href="/category/runner/"><span class="icon">&#127939;</span><span class="label">Runner</span></a>
+      <a href="/category/sports/"><span class="icon">&#9917;</span><span class="label">Sports</span></a>
+      <a href="/category/shooting/"><span class="icon">&#127919;</span><span class="label">Shooting</span></a>
+    </nav>
+    <hr>
+    <nav>
+      <a href="/about/"><span class="icon">&#8505;&#65039;</span><span class="label">About</span></a>
     </nav>
   </aside>
 
@@ -51,16 +89,18 @@
 
     <!-- Top bar -->
     <header class="topbar">
-      <input class="search" type="search" placeholder="🔍  Search games..." id="search-input">
-      <!-- Auth slots (toggled by clerk.js) -->
-      <div id="auth-signed-out" class="hidden">
-        <button class="btn-signin" id="sign-in-btn">Sign In</button>
-      </div>
-      <div id="auth-signed-in" class="hidden">
-        <span class="user-info">
-          <span id="user-name"></span>
-          <button class="btn-secondary" id="sign-out-btn">Sign Out</button>
-        </span>
+      <input class="search" type="search" placeholder="Search games..." id="search-input">
+      <!-- Auth slots — fixed-width container prevents CLS -->
+      <div class="auth-slot">
+        <div id="auth-signed-out" class="hidden">
+          <button class="btn-signin" id="sign-in-btn">Sign In</button>
+        </div>
+        <div id="auth-signed-in" class="hidden">
+          <span class="user-info">
+            <span id="user-name"></span>
+            <button class="btn-secondary" id="sign-out-btn">Sign Out</button>
+          </span>
+        </div>
       </div>
     </header>
 
@@ -69,34 +109,72 @@
       {{ content | safe }}
     </main>
 
+    <footer class="site-footer">
+      <nav class="footer-nav">
+        <a href="/about/">About</a>
+        <a href="/privacy/">Privacy Policy</a>
+        <a href="/terms/">Terms of Service</a>
+      </nav>
+      <p class="footer-copy">&copy; {{ 2025 }} kloopik &mdash; Free browser games, no download required.</p>
+    </footer>
+
   </div>
 </div>
 
+<!-- Mobile nav overlay -->
+<div class="mobile-nav-overlay hidden" id="mobile-nav-overlay"></div>
+
 <script>
-  // Clerk auth init
-  (async () => {
-    const clerk = new Clerk('{{ env.clerkPublishableKey or "pk_test_REPLACE_ME" }}');
-    await clerk.load();
-    window.__clerk = clerk;
-
-    const out = document.getElementById('auth-signed-out');
-    const inn = document.getElementById('auth-signed-in');
-    const nameEl = document.getElementById('user-name');
-
-    if (clerk.user) {
-      inn.classList.remove('hidden');
-      nameEl.textContent = clerk.user.firstName || clerk.user.emailAddresses[0].emailAddress;
-    } else {
-      out.classList.remove('hidden');
+  // Mobile nav toggle
+  (function () {
+    var btn = document.getElementById('mobile-nav-toggle');
+    var sidebar = document.getElementById('sidebar');
+    var overlay = document.getElementById('mobile-nav-overlay');
+    if (!btn) return;
+    function open() {
+      sidebar.classList.add('mobile-open');
+      overlay.classList.remove('hidden');
     }
-
-    document.getElementById('sign-in-btn')?.addEventListener('click', () => clerk.openSignIn());
-    document.getElementById('sign-out-btn')?.addEventListener('click', () => clerk.signOut().then(() => location.reload()));
+    function close() {
+      sidebar.classList.remove('mobile-open');
+      overlay.classList.add('hidden');
+    }
+    btn.addEventListener('click', function () {
+      sidebar.classList.contains('mobile-open') ? close() : open();
+    });
+    overlay.addEventListener('click', close);
   })();
+</script>
+
+<script>
+  // Clerk auth init — runs after defer'd clerk.browser.js loads
+  document.addEventListener('DOMContentLoaded', function () {
+    var key = '{{ env.clerkPublishableKey }}';
+    if (!key) return;
+    var out = document.getElementById('auth-signed-out');
+    var inn = document.getElementById('auth-signed-in');
+    var nameEl = document.getElementById('user-name');
+
+    function initClerk() {
+      if (typeof Clerk === 'undefined') { setTimeout(initClerk, 100); return; }
+      var clerk = new Clerk(key);
+      clerk.load().then(function () {
+        window.__clerk = clerk;
+        if (clerk.user) {
+          inn.classList.remove('hidden');
+          nameEl.textContent = clerk.user.firstName || clerk.user.emailAddresses[0].emailAddress;
+        } else {
+          out.classList.remove('hidden');
+        }
+        document.getElementById('sign-in-btn')?.addEventListener('click', function () { clerk.openSignIn(); });
+        document.getElementById('sign-out-btn')?.addEventListener('click', function () { clerk.signOut().then(function () { location.reload(); }); });
+      });
+    }
+    initClerk();
+  });
 </script>
 <script src="/js/portal.js"></script>
 {% if includeShell %}
-<script>const GAME_SLUG = '{{ gameSlug }}';</script>
 <script src="/js/shell.js"></script>
 {% endif %}
 </body>

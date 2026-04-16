@@ -7,7 +7,9 @@
     "emoji": "🐍",
     "controls": "Arrow keys or WASD",
     "new": true,
-    "featured": true
+    "featured": true,
+    "howToPlay": "<p>Use the <strong>arrow keys</strong> or <strong>WASD</strong> to steer your snake around the board. Each time your snake eats a piece of food, it grows one segment longer and your score increases. The game ends if your snake runs into a wall or into its own body.</p><p>As your snake grows longer the game gets progressively harder — planning your path ahead of time is key. Try to keep the snake near the center of the board early on so you have more room to maneuver as it grows. Avoid boxing yourself into a corner.</p><p>There is no time limit. The goal is simply to survive as long as possible and reach the highest score you can.</p>",
+    "about": "<p>Snake is one of the most iconic video games ever made. The concept originated in the 1976 arcade game <em>Blockade</em> and became a global phenomenon when Nokia pre-installed a version on its mobile phones in 1998 — introducing the game to hundreds of millions of players worldwide.</p><p>The browser version on kloopik is a faithful recreation of the classic rules: grow, don't crash, beat your high score. It runs entirely in your browser using HTML5 Canvas with no plugins required.</p>"
   },
   {
     "slug": "breakout",
@@ -17,6 +19,8 @@
     "emoji": "🏓",
     "controls": "Mouse or left/right arrow keys",
     "new": true,
-    "featured": false
+    "featured": false,
+    "howToPlay": "<p>Move your paddle left and right using the <strong>mouse</strong> or the <strong>left and right arrow keys</strong>. Bounce the ball off your paddle to hit and destroy the bricks at the top of the screen. Clear all the bricks to win the round.</p><p>If the ball falls past your paddle, the game ends — so keep your paddle under the ball at all times. The ball picks up speed as you progress, so stay focused. Aim for the corners and edges of the brick field to chain multiple hits in one pass.</p><p>Hitting bricks in the top rows scores more points than the lower rows, so try to work your way up as quickly as possible.</p>",
+    "about": "<p>Breakout was originally designed by Steve Jobs and Steve Wozniak and released by Atari in 1976. It became one of the defining games of the golden age of arcade gaming and directly inspired countless descendants, including the <em>Arkanoid</em> series and modern brick-breaker mobile games.</p><p>The version on kloopik recreates the classic single-player experience in your browser using HTML5 Canvas. No plugins, no downloads — just the timeless satisfaction of clearing bricks one bounce at a time.</p>"
   }
 ]

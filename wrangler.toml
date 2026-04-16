@@ -2,6 +2,11 @@ name = "kloopik"
 compatibility_date = "2024-01-01"
 pages_build_output_dir = "_site"
 
+[vars]
+SITE_URL = "https://www.kloopik.com"
+CLERK_PUBLISHABLE_KEY = "pk_test_Y29zbWljLXJvZGVudC0zOC5jbGVyay5hY2NvdW50cy5kZXYk"
+CLERK_JWKS_URL = "https://cosmic-rodent-38.clerk.accounts.dev/.well-known/jwks.json"
+
 [[d1_databases]]
 binding = "DB"
 database_name = "kloopik-db"
