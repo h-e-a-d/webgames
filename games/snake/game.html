@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Snake</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #000; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; flex-direction: column; gap: 8px; }
+    canvas { display: block; border: 1px solid #222; }
+    #ui {
+      color: #fff;
+      font-family: monospace;
+      font-size: 14px;
+      letter-spacing: 1px;
+    }
+    #ad-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.92);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      z-index: 999; gap: 16px;
+    }
+    #ad-overlay.hidden { display: none; }
+    #ad-skip {
+      color: #fff; background: none;
+      border: 1px solid #444;
+      padding: 6px 16px; border-radius: 4px;
+      font-size: 13px; cursor: pointer;
+    }
+    #ad-container { width: 320px; min-height: 50px; }
+  </style>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-REPLACE_WITH_YOUR_PUBLISHER_ID" crossorigin="anonymous"></script>
+</head>
+<body>
+
+<div id="ad-overlay">
+  <ins class="adsbygoogle" id="ad-container" style="display:block"
+       data-ad-client="ca-pub-REPLACE_WITH_YOUR_PUBLISHER_ID"
+       data-ad-slot="REPLACE_WITH_AD_SLOT_ID"
+       data-ad-format="auto" data-full-width-responsive="true"></ins>
+  <button id="ad-skip">Skip Ad ›</button>
+</div>
+
+<div id="ui">Score: <span id="score-el">0</span> &nbsp;|&nbsp; Best: <span id="hi-el">0</span></div>
+<canvas id="canvas"></canvas>
+
+<script>
+// ── GameSDK ───────────────────────────────────────────────────────
+const GameSDK = (() => {
+  let saveTimer = null;
+  const SAVE_DEBOUNCE_MS = 2000;
+
+  window.addEventListener('message', (e) => {
+    if (e.data?.type === 'load-save') {
+      if (typeof onSaveLoaded === 'function') onSaveLoaded(e.data.data);
+    }
+  });
+
+  function save(data) {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      parent.postMessage({ type: 'save', data }, window.location.origin);
+    }, SAVE_DEBOUNCE_MS);
+  }
+
+  const overlay = document.getElementById('ad-overlay');
+  const skipBtn = document.getElementById('ad-skip');
+  let adResolve = null;
+  let skipDelay = 5;
+  skipBtn.disabled = true;
+  skipBtn.textContent = `Skip Ad (${skipDelay})`;
+
+  function runAdTimer() {
+    const t = setInterval(() => {
+      skipDelay--;
+      skipBtn.textContent = skipDelay > 0 ? `Skip Ad (${skipDelay})` : 'Skip Ad ›';
+      if (skipDelay <= 0) { skipBtn.disabled = false; clearInterval(t); }
+    }, 1000);
+  }
+
+  function showAd() {
+    return new Promise((resolve) => {
+      adResolve = resolve;
+      overlay.classList.remove('hidden');
+      skipDelay = 5; skipBtn.disabled = true;
+      skipBtn.textContent = `Skip Ad (${skipDelay})`;
+      runAdTimer();
+      try { (adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) {}
+    });
+  }
+
+  skipBtn.addEventListener('click', () => {
+    overlay.classList.add('hidden');
+    if (adResolve) { adResolve(); adResolve = null; }
+  });
+
+  return { save, showAd };
+})();
+
+// ── Snake ─────────────────────────────────────────────────────────
+const canvas  = document.getElementById('canvas');
+const ctx     = canvas.getContext('2d');
+const scoreEl = document.getElementById('score-el');
+const hiEl    = document.getElementById('hi-el');
+
+const COLS = 20, ROWS = 20, CELL = 24;
+canvas.width  = COLS * CELL;
+canvas.height = ROWS * CELL;
+
+let snake, dir, nextDir, food, score, highScore, gameLoop;
+
+function onSaveLoaded(data) {
+  if (data?.highScore) {
+    highScore = data.highScore;
+    hiEl.textContent = highScore;
+  }
+}
+
+function rand(max) { return Math.floor(Math.random() * max); }
+
+function spawnFood() {
+  let pos;
+  do { pos = { x: rand(COLS), y: rand(ROWS) }; }
+  while (snake.some(s => s.x === pos.x && s.y === pos.y));
+  return pos;
+}
+
+function startGame() {
+  snake   = [{ x: 10, y: 10 }];
+  dir     = { x: 1, y: 0 };
+  nextDir = { x: 1, y: 0 };
+  food    = spawnFood();
+  score   = 0;
+  scoreEl.textContent = 0;
+  clearInterval(gameLoop);
+  gameLoop = setInterval(tick, 120);
+}
+
+function tick() {
+  dir = nextDir;
+  const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
+
+  if (head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS) return gameOver();
+  if (snake.some(s => s.x === head.x && s.y === head.y)) return gameOver();
+
+  snake.unshift(head);
+
+  if (head.x === food.x && head.y === food.y) {
+    score++;
+    scoreEl.textContent = score;
+    food = spawnFood();
+    if (score > highScore) {
+      highScore = score;
+      hiEl.textContent = highScore;
+    }
+    GameSDK.save({ highScore });
+  } else {
+    snake.pop();
+  }
+
+  draw();
+}
+
+async function gameOver() {
+  clearInterval(gameLoop);
+  GameSDK.save({ highScore });
+  await GameSDK.showAd(); // interstitial on game over
+  startGame();
+}
+
+function draw() {
+  // Background
+  ctx.fillStyle = '#111';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Grid lines
+  ctx.strokeStyle = '#1a1a1a';
+  ctx.lineWidth = 0.5;
+  for (let x = 0; x <= COLS; x++) {
+    ctx.beginPath(); ctx.moveTo(x * CELL, 0); ctx.lineTo(x * CELL, canvas.height); ctx.stroke();
+  }
+  for (let y = 0; y <= ROWS; y++) {
+    ctx.beginPath(); ctx.moveTo(0, y * CELL); ctx.lineTo(canvas.width, y * CELL); ctx.stroke();
+  }
+
+  // Snake body
+  snake.forEach((s, i) => {
+    ctx.fillStyle = i === 0 ? '#5c5cff' : '#3a3a99';
+    ctx.beginPath();
+    ctx.roundRect(s.x * CELL + 1, s.y * CELL + 1, CELL - 2, CELL - 2, 3);
+    ctx.fill();
+  });
+
+  // Food
+  ctx.fillStyle = '#ff5c5c';
+  ctx.beginPath();
+  ctx.arc(food.x * CELL + CELL / 2, food.y * CELL + CELL / 2, CELL / 2 - 2, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+// Keyboard input
+document.addEventListener('keydown', (e) => {
+  const map = {
+    ArrowUp:    { x:  0, y: -1 }, W: { x:  0, y: -1 }, w: { x:  0, y: -1 },
+    ArrowDown:  { x:  0, y:  1 }, S: { x:  0, y:  1 }, s: { x:  0, y:  1 },
+    ArrowLeft:  { x: -1, y:  0 }, A: { x: -1, y:  0 }, a: { x: -1, y:  0 },
+    ArrowRight: { x:  1, y:  0 }, D: { x:  1, y:  0 }, d: { x:  1, y:  0 },
+  };
+  const d = map[e.key];
+  if (d && !(d.x === -dir.x && d.y === -dir.y)) {
+    e.preventDefault();
+    nextDir = d;
+  }
+});
+
+// Auto-save on tab switch / close
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) GameSDK.save({ highScore });
+});
+
+async function init() {
+  highScore = 0;
+  hiEl.textContent = 0;
+  await GameSDK.showAd(); // pre-roll
+  startGame();
+}
+
+init();
+</script>
+</body>
+</html>
