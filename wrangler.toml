@@ -6,8 +6,3 @@ pages_build_output_dir = "_site"
 binding = "DB"
 database_name = "kloopik-db"
 database_id = "007e9e36-6747-42c9-890e-4a15d2ac8fc2"
-
-[vars]
-# Get your JWKS URL from Clerk Dashboard → API Keys → Frontend API URL
-# Format: https://[your-clerk-frontend-api].clerk.accounts.dev/.well-known/jwks.json
-CLERK_JWKS_URL = "https://YOUR_CLERK_FRONTEND_API.clerk.accounts.dev/.well-known/jwks.json"
