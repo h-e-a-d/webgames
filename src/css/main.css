@@ -1,5 +1,6 @@
 /* ── Design Tokens ─────────────────────────────────────────────── */
 :root {
+  color-scheme: dark;
   --bg-base:       #0a0a0f;
   --bg-surface:    #0f0f18;
   --bg-raised:     #1a1a2e;
@@ -261,6 +262,7 @@ body {
   transition: background 0.15s;
 }
 .btn-secondary:hover { background: var(--bg-hover); }
+.topbar .btn-secondary { padding: 5px 12px; font-size: 12px; }
 .controls-hint { margin-left: auto; font-size: 11px; color: var(--text-muted); }
 .game-info { margin-top: 14px; }
 .game-info h1 { font-size: 18px; font-weight: 700; }
@@ -292,4 +294,5 @@ body {
 .related-card .rcat   { font-size: 10px; color: var(--text-muted); text-transform: uppercase; }
 
 /* ── Utility ────────────────────────────────────────────────────── */
+.sidebar nav a:visited, .game-card:visited, .related-card:visited { color: inherit; }
 .hidden { display: none !important; }
