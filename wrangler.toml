@@ -8,4 +8,6 @@ database_name = "gaming-portal-db"
 database_id = "REPLACE_AFTER_CREATION"
 
 [vars]
+# Get your JWKS URL from Clerk Dashboard → API Keys → Frontend API URL
+# Format: https://[your-clerk-frontend-api].clerk.accounts.dev/.well-known/jwks.json
 CLERK_JWKS_URL = "https://YOUR_CLERK_FRONTEND_API.clerk.accounts.dev/.well-known/jwks.json"
