@@ -108,9 +108,10 @@ canvas.width  = COLS * CELL;
 canvas.height = ROWS * CELL;
 
 let snake, dir, nextDir, food, score, highScore, gameLoop;
+// Note: no `running` flag — gameOver() clears the interval directly
 
 function onSaveLoaded(data) {
-  if (data?.highScore) {
+  if (typeof data?.highScore === 'number') {
     highScore = data.highScore;
     hiEl.textContent = highScore;
   }
