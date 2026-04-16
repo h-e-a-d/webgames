@@ -1,0 +1,13 @@
+{
+  "name": "gaming-portal",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "eleventy --serve",
+    "build": "eleventy",
+    "preview": "wrangler pages dev _site --compatibility-date=2024-01-01"
+  },
+  "devDependencies": {
+    "@11ty/eleventy": "^3.0.0",
+    "wrangler": "^3.0.0"
+  }
+}
