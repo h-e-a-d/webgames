@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ title }} | GamePortal</title>
+  {% if description %}
+  <meta name="description" content="{{ description }}">
+  {% endif %}
+  <link rel="stylesheet" href="/css/main.css">
+  <!-- Clerk auth -->
+  <script src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@5/dist/clerk.browser.js" crossorigin="anonymous"></script>
+</head>
+<body>
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar {% if collapsedSidebar %}collapsed{% endif %}" id="sidebar">
+    <a href="/" class="logo">GAMEPORTAL</a>
+    <nav>
+      <a href="/" class="{% if page.url == '/' %}active{% endif %}">
+        <span class="icon">🏠</span><span class="label">Home</span>
+      </a>
+      <a href="/popular/"><span class="icon">🔥</span><span class="label">Popular</span></a>
+      <a href="/new/"><span class="icon">⭐</span><span class="label">New</span></a>
+      <a href="/random/"><span class="icon">🎲</span><span class="label">Random</span></a>
+    </nav>
+    <hr>
+    <div class="section-label">Categories</div>
+    <nav>
+      <a href="/category/arcade/"><span class="icon">🕹️</span><span class="label">Arcade</span></a>
+      <a href="/category/puzzle/"><span class="icon">🧩</span><span class="label">Puzzle</span></a>
+      <a href="/category/card/"><span class="icon">🃏</span><span class="label">Card</span></a>
+      <a href="/category/action/"><span class="icon">⚔️</span><span class="label">Action</span></a>
+      <a href="/category/strategy/"><span class="icon">♟️</span><span class="label">Strategy</span></a>
+      <a href="/category/runner/"><span class="icon">🏃</span><span class="label">Runner</span></a>
+      <a href="/category/sports/"><span class="icon">⚽</span><span class="label">Sports</span></a>
+      <a href="/category/shooting/"><span class="icon">🎯</span><span class="label">Shooting</span></a>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <div class="main {% if collapsedSidebar %}sidebar-collapsed{% endif %}" id="main">
+
+    <!-- Top bar -->
+    <header class="topbar">
+      <input class="search" type="search" placeholder="🔍  Search games..." id="search-input">
+      <!-- Auth slots (toggled by clerk.js) -->
+      <div id="auth-signed-out" class="hidden">
+        <button class="btn-signin" id="sign-in-btn">Sign In</button>
+      </div>
+      <div id="auth-signed-in" class="hidden">
+        <span class="user-info">
+          <span id="user-name"></span>
+          <button class="btn-secondary" id="sign-out-btn">Sign Out</button>
+        </span>
+      </div>
+    </header>
+
+    <!-- Page content -->
+    <main class="content">
+      {{ content | safe }}
+    </main>
+
+  </div>
+</div>
+
+<script>
+  // Clerk auth init
+  (async () => {
+    const clerk = new Clerk('{{ env.clerkPublishableKey }}');
+    await clerk.load();
+    window.__clerk = clerk;
+
+    const out = document.getElementById('auth-signed-out');
+    const inn = document.getElementById('auth-signed-in');
+    const nameEl = document.getElementById('user-name');
+
+    if (clerk.user) {
+      inn.classList.remove('hidden');
+      nameEl.textContent = clerk.user.firstName || clerk.user.emailAddresses[0].emailAddress;
+    } else {
+      out.classList.remove('hidden');
+    }
+
+    document.getElementById('sign-in-btn')?.addEventListener('click', () => clerk.openSignIn());
+    document.getElementById('sign-out-btn')?.addEventListener('click', () => clerk.signOut().then(() => location.reload()));
+  })();
+</script>
+<script src="/js/portal.js"></script>
+{{ extraScripts | safe }}
+</body>
+</html>
