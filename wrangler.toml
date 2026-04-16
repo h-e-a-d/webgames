@@ -1,10 +1,10 @@
-name = "gaming-portal"
+name = "kloopik"
 compatibility_date = "2024-01-01"
 pages_build_output_dir = "_site"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "gaming-portal-db"
+database_name = "kloopik-db"
 database_id = "REPLACE_AFTER_CREATION"
 
 [vars]

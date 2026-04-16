@@ -1,5 +1,5 @@
 {
-  "name": "gaming-portal",
+  "name": "kloopik",
   "version": "1.0.0",
   "scripts": {
     "dev": "eleventy --serve",

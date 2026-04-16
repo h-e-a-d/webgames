@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{ title }} | GamePortal</title>
+  <title>{{ title }} | kloopik</title>
   {% if description %}
   <meta name="description" content="{{ description }}">
   {% endif %}
-  <meta property="og:title"       content="{{ title }} | GamePortal">
+  <meta property="og:title"       content="{{ title }} | kloopik">
   <meta property="og:description" content="{{ description or 'Free HTML5 games — play instantly in your browser, no download required.' }}">
   <meta property="og:type"        content="{{ ogType or 'website' }}">
   <meta property="og:url"         content="{{ env.siteUrl or 'https://yourdomain.com' }}{{ page.url }}">
@@ -23,7 +23,7 @@
 
   <!-- Sidebar -->
   <aside class="sidebar {% if collapsedSidebar %}collapsed{% endif %}" id="sidebar">
-    <a href="/" class="logo">GAMEPORTAL</a>
+    <a href="/" class="logo">KLOOPIK</a>
     <nav>
       <a href="/" class="{% if page.url == '/' %}active{% endif %}">
         <span class="icon">🏠</span><span class="label">Home</span>
