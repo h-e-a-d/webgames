@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #000; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
+    canvas { display: block; image-rendering: pixelated; }
+
+    /* ── AdSense overlay (pre-roll / interstitial) ─────────────── */
+    #ad-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.92);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      gap: 16px;
+    }
+    #ad-overlay.hidden { display: none; }
+    #ad-container { width: 320px; min-height: 50px; }
+    #ad-skip {
+      background: none;
+      border: 1px solid #444;
+      padding: 6px 16px;
+      border-radius: 4px;
+      color: #fff;
+      font-family: sans-serif;
+      font-size: 13px;
+      cursor: pointer;
+    }
+  </style>
+  <!-- Google AdSense for Games -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-REPLACE_WITH_YOUR_PUBLISHER_ID" crossorigin="anonymous"></script>
+</head>
+<body>
+
+<!-- Ad overlay (shown for pre-roll and interstitials) -->
+<div id="ad-overlay">
+  <ins class="adsbygoogle"
+       id="ad-container"
+       style="display:block"
+       data-ad-client="ca-pub-REPLACE_WITH_YOUR_PUBLISHER_ID"
+       data-ad-slot="REPLACE_WITH_AD_SLOT_ID"
+       data-ad-format="auto"
+       data-full-width-responsive="true"></ins>
+  <button id="ad-skip">Skip Ad ›</button>
+</div>
+
+<canvas id="canvas"></canvas>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// GAME SDK — copy verbatim into every game, do not modify
+// ═══════════════════════════════════════════════════════════════════
+
+const GameSDK = (() => {
+  let saveTimer = null;
+  const SAVE_DEBOUNCE_MS = 2000;
+
+  // Receive load-save from parent shell
+  window.addEventListener('message', (e) => {
+    if (e.data?.type === 'load-save') {
+      if (typeof onSaveLoaded === 'function') onSaveLoaded(e.data.data);
+    }
+  });
+
+  function save(data) {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      parent.postMessage({ type: 'save', data }, window.location.origin);
+    }, SAVE_DEBOUNCE_MS);
+  }
+
+  // ── Ad management ──────────────────────────────────────────────
+  const overlay = document.getElementById('ad-overlay');
+  const skipBtn = document.getElementById('ad-skip');
+  let adResolve = null;
+  let skipDelay = 5;
+
+  skipBtn.disabled = true;
+  skipBtn.textContent = `Skip Ad (${skipDelay})`;
+
+  function runAdTimer() {
+    const t = setInterval(() => {
+      skipDelay--;
+      skipBtn.textContent = skipDelay > 0 ? `Skip Ad (${skipDelay})` : 'Skip Ad ›';
+      if (skipDelay <= 0) {
+        skipBtn.disabled = false;
+        clearInterval(t);
+      }
+    }, 1000);
+  }
+
+  function showAd() {
+    return new Promise((resolve) => {
+      adResolve = resolve;
+      overlay.classList.remove('hidden');
+      skipDelay = 5;
+      skipBtn.disabled = true;
+      skipBtn.textContent = `Skip Ad (${skipDelay})`;
+      runAdTimer();
+      try { (adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) {}
+    });
+  }
+
+  skipBtn.addEventListener('click', () => {
+    overlay.classList.add('hidden');
+    if (adResolve) { adResolve(); adResolve = null; }
+  });
+
+  return { save, showAd };
+})();
+
+// ═══════════════════════════════════════════════════════════════════
+// GAME CODE — replace everything below with your game
+// ═══════════════════════════════════════════════════════════════════
+
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+// Called by GameSDK when parent posts saved state on load
+function onSaveLoaded(data) {
+  // Restore game state from data
+  // e.g. score = data.score; level = data.level;
+}
+
+async function init() {
+  // Show pre-roll ad before game starts
+  await GameSDK.showAd();
+
+  // Set up canvas dimensions
+  canvas.width  = 480;
+  canvas.height = 360;
+
+  // TODO: implement your game loop here
+
+  // Auto-save example — call after meaningful game events:
+  // GameSDK.save({ score: currentScore, level: currentLevel });
+}
+
+// Auto-save when user switches tab or closes
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    // GameSDK.save(getCurrentState());
+  }
+});
+
+init();
+</script>
+</body>
+</html>
