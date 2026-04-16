@@ -1,8 +1,59 @@
 ---
-title: Gaming Portal
+layout: base.njk
+title: Home
 ---
-<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="UTF-8"><title>{{ title }}</title></head>
-<body><h1>Portal works</h1></body>
-</html>
+
+{% set topPicks = games | selectattr("featured") | list %}
+{% set newGames = games | selectattr("new") | list %}
+
+<!-- Top picks row -->
+<div class="row">
+  <div class="row-header">
+    <h2>Top picks for you</h2>
+    <a href="/all/">See all</a>
+  </div>
+  <div class="games-grid large">
+    {% for game in topPicks %}
+    <a class="game-card" href="/games/{{ game.slug }}/">
+      <div class="thumb">
+        {% if game.thumbnail %}
+          <img src="/public/thumbnails/{{ game.slug }}.jpg" alt="{{ game.title }}" loading="lazy">
+        {% else %}
+          <span class="emoji">{{ game.emoji }}</span>
+        {% endif %}
+      </div>
+      <div class="info">
+        <div class="title">{{ game.title }}</div>
+        <div class="cat">{{ game.category }}</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- New games row -->
+{% if newGames.length %}
+<div class="row">
+  <div class="row-header">
+    <h2>New games <span class="badge-new">NEW</span></h2>
+    <a href="/new/">See all</a>
+  </div>
+  <div class="games-grid medium">
+    {% for game in newGames %}
+    <a class="game-card" href="/games/{{ game.slug }}/">
+      <div class="thumb">
+        {% if game.thumbnail %}
+          <img src="/public/thumbnails/{{ game.slug }}.jpg" alt="{{ game.title }}" loading="lazy">
+        {% else %}
+          <span class="emoji">{{ game.emoji }}</span>
+        {% endif %}
+      </div>
+      <div class="info">
+        <div class="title">{{ game.title }}</div>
+        <div class="cat">{{ game.category }}</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}

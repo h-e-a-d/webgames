@@ -1,0 +1,22 @@
+[
+  {
+    "slug": "snake",
+    "title": "Snake",
+    "category": "arcade",
+    "description": "Classic snake game. Eat food, grow longer, don't hit the walls. How long can you last?",
+    "emoji": "🐍",
+    "controls": "Arrow keys or WASD",
+    "new": true,
+    "featured": true
+  },
+  {
+    "slug": "breakout",
+    "title": "Breakout",
+    "category": "arcade",
+    "description": "Smash all the bricks with your ball and paddle. Don't let the ball fall!",
+    "emoji": "🏓",
+    "controls": "Mouse or left/right arrow keys",
+    "new": true,
+    "featured": false
+  }
+]

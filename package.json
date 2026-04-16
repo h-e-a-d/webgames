@@ -8,6 +8,7 @@
   },
   "devDependencies": {
     "@11ty/eleventy": "^3.0.0",
+    "dotenv": "^17.4.2",
     "wrangler": "^3.0.0"
   }
 }
