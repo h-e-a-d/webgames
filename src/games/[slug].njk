@@ -7,11 +7,32 @@ permalink: /games/{{ game.slug }}/
 layout: base.njk
 collapsedSidebar: true
 includeShell: true
+ogType: game
 eleventyComputed:
   title: "{{ game.title }}"
   description: "{{ game.description }}"
   gameSlug: "{{ game.slug }}"
+  ogImage: "{% if game.thumbnail %}{{ game.thumbnail }}{% endif %}"
 ---
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoGame",
+  "name": {{ game.title | jsEscape | safe }},
+  "description": {{ game.description | jsEscape | safe }},
+  "url": {{ (env.siteUrl + "/games/" + game.slug + "/") | jsEscape | safe }},
+  "genre": {{ game.category | capitalize | jsEscape | safe }},
+  "gamePlatform": "Web browser",
+  "applicationCategory": "Game",
+  "operatingSystem": "Any",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  }
+}
+</script>
 
 {% set related = games | reject("slug", game.slug) | selectattr("category", game.category) | list %}
 

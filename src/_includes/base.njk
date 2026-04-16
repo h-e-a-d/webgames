@@ -7,6 +7,13 @@
   {% if description %}
   <meta name="description" content="{{ description }}">
   {% endif %}
+  <meta property="og:title"       content="{{ title }} | GamePortal">
+  <meta property="og:description" content="{{ description or 'Free HTML5 games — play instantly in your browser, no download required.' }}">
+  <meta property="og:type"        content="{{ ogType or 'website' }}">
+  <meta property="og:url"         content="{{ env.siteUrl or 'https://yourdomain.com' }}{{ page.url }}">
+  {% if ogImage %}<meta property="og:image" content="{{ env.siteUrl or 'https://yourdomain.com' }}{{ ogImage }}">{% endif %}
+  <meta name="twitter:card"       content="summary_large_image">
+  <link rel="canonical"           href="{{ env.siteUrl or 'https://yourdomain.com' }}{{ page.url }}">
   <link rel="stylesheet" href="/css/main.css">
   <!-- Clerk auth -->
   <script src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@5/dist/clerk.browser.js" crossorigin="anonymous"></script>

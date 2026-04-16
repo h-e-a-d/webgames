@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Breakout</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #000; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; flex-direction: column; gap: 8px; }
+    canvas { display: block; border: 1px solid #222; }
+    #ui {
+      color: #fff;
+      font-family: monospace;
+      font-size: 14px;
+      letter-spacing: 1px;
+    }
+    #ad-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.92);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      z-index: 999; gap: 16px;
+    }
+    #ad-overlay.hidden { display: none; }
+    #ad-skip {
+      color: #fff; background: none;
+      border: 1px solid #444;
+      padding: 6px 16px; border-radius: 4px;
+      font-size: 13px; cursor: pointer;
+    }
+    #ad-container { width: 320px; min-height: 50px; }
+  </style>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-REPLACE_WITH_YOUR_PUBLISHER_ID" crossorigin="anonymous"></script>
+</head>
+<body>
+
+<div id="ad-overlay">
+  <ins class="adsbygoogle" id="ad-container" style="display:block"
+       data-ad-client="ca-pub-REPLACE_WITH_YOUR_PUBLISHER_ID"
+       data-ad-slot="REPLACE_WITH_AD_SLOT_ID"
+       data-ad-format="auto" data-full-width-responsive="true"></ins>
+  <button id="ad-skip">Skip Ad ›</button>
+</div>
+
+<div id="ui">Score: <span id="score-el">0</span> &nbsp;|&nbsp; Best: <span id="hi-el">0</span> &nbsp;|&nbsp; Lives: <span id="lives-el">3</span></div>
+<canvas id="canvas"></canvas>
+
+<script>
+// ── GameSDK ───────────────────────────────────────────────────────
+const GameSDK = (() => {
+  let saveTimer = null;
+  const SAVE_DEBOUNCE_MS = 2000;
+
+  window.addEventListener('message', (e) => {
+    if (e.data?.type === 'load-save') {
+      if (typeof onSaveLoaded === 'function') onSaveLoaded(e.data.data);
+    }
+  });
+
+  function save(data) {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      parent.postMessage({ type: 'save', data }, '*');
+    }, SAVE_DEBOUNCE_MS);
+  }
+
+  const overlay = document.getElementById('ad-overlay');
+  const skipBtn = document.getElementById('ad-skip');
+  let adResolve = null;
+  let skipDelay = 5;
+  skipBtn.disabled = true;
+  skipBtn.textContent = `Skip Ad (${skipDelay})`;
+
+  function runAdTimer() {
+    const t = setInterval(() => {
+      skipDelay--;
+      skipBtn.textContent = skipDelay > 0 ? `Skip Ad (${skipDelay})` : 'Skip Ad ›';
+      if (skipDelay <= 0) { skipBtn.disabled = false; clearInterval(t); }
+    }, 1000);
+  }
+
+  function showAd() {
+    return new Promise((resolve) => {
+      adResolve = resolve;
+      overlay.classList.remove('hidden');
+      skipDelay = 5; skipBtn.disabled = true;
+      skipBtn.textContent = `Skip Ad (${skipDelay})`;
+      runAdTimer();
+      try { (adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) {}
+    });
+  }
+
+  skipBtn.addEventListener('click', () => {
+    overlay.classList.add('hidden');
+    if (adResolve) { adResolve(); adResolve = null; }
+  });
+
+  return { save, showAd };
+})();
+
+// ── Breakout ──────────────────────────────────────────────────────
+const canvas  = document.getElementById('canvas');
+const ctx     = canvas.getContext('2d');
+const scoreEl = document.getElementById('score-el');
+const hiEl    = document.getElementById('hi-el');
+const livesEl = document.getElementById('lives-el');
+
+const W = 480, H = 320;
+canvas.width  = W;
+canvas.height = H;
+
+// Brick layout
+const BRICK_COLS  = 10;
+const BRICK_ROWS  = 5;
+const BRICK_W     = 42;
+const BRICK_H     = 14;
+const BRICK_PAD   = 3;
+const BRICK_OFF_X = 9;
+const BRICK_OFF_Y = 30;
+
+// Brick row colors
+const ROW_COLORS = ['#ff5c5c', '#ff8c5c', '#ffd65c', '#5cff8c', '#5ca8ff'];
+
+// Paddle
+const PAD_W = 70, PAD_H = 10, PAD_Y = H - 24;
+
+// Ball
+const BALL_R = 6;
+const BALL_SPEED_BASE  = 3.5;
+const BALL_SPEED_MAX   = 7;
+const BALL_SPEED_STEP  = 0.15; // speed increase per brick hit
+
+let paddle, ball, bricks, score, highScore, lives, rafId;
+let gameActive = false;
+let mouseX = W / 2;
+
+function onSaveLoaded(data) {
+  if (typeof data?.highScore === 'number') {
+    highScore = data.highScore;
+    hiEl.textContent = highScore;
+  }
+}
+
+function makeBricks() {
+  const b = [];
+  for (let r = 0; r < BRICK_ROWS; r++) {
+    for (let c = 0; c < BRICK_COLS; c++) {
+      b.push({
+        x: BRICK_OFF_X + c * (BRICK_W + BRICK_PAD),
+        y: BRICK_OFF_Y + r * (BRICK_H + BRICK_PAD),
+        alive: true,
+        color: ROW_COLORS[r]
+      });
+    }
+  }
+  return b;
+}
+
+function startGame() {
+  paddle = { x: W / 2 - PAD_W / 2, y: PAD_Y };
+  ball   = {
+    x: W / 2, y: PAD_Y - BALL_R - 1,
+    vx: (Math.random() < 0.5 ? 1 : -1) * BALL_SPEED_BASE,
+    vy: -BALL_SPEED_BASE
+  };
+  bricks = makeBricks();
+  score  = 0;
+  lives  = 3;
+  scoreEl.textContent = 0;
+  livesEl.textContent = 3;
+  gameActive = true;
+  cancelAnimationFrame(rafId);
+  rafId = requestAnimationFrame(loop);
+}
+
+function clampPaddle(x) {
+  return Math.max(0, Math.min(W - PAD_W, x));
+}
+
+// Mouse / touch control
+canvas.addEventListener('mousemove', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = W / rect.width;
+  mouseX = (e.clientX - rect.left) * scaleX;
+});
+canvas.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = W / rect.width;
+  mouseX = (e.touches[0].clientX - rect.left) * scaleX;
+}, { passive: false });
+
+// Keyboard control
+const keys = {};
+document.addEventListener('keydown', (e) => {
+  keys[e.key] = true;
+  if (['ArrowLeft','ArrowRight'].includes(e.key)) e.preventDefault();
+});
+document.addEventListener('keyup',  (e) => { keys[e.key] = false; });
+
+const PAD_SPEED = 6;
+
+function updatePaddle() {
+  // Mouse takes precedence; keyboard adjusts from current position
+  if (keys['ArrowLeft'])  mouseX -= PAD_SPEED;
+  if (keys['ArrowRight']) mouseX += PAD_SPEED;
+  paddle.x = clampPaddle(mouseX - PAD_W / 2);
+}
+
+function updateBall() {
+  ball.x += ball.vx;
+  ball.y += ball.vy;
+
+  // Wall bounces
+  if (ball.x - BALL_R < 0) { ball.x = BALL_R; ball.vx = Math.abs(ball.vx); }
+  if (ball.x + BALL_R > W) { ball.x = W - BALL_R; ball.vx = -Math.abs(ball.vx); }
+  if (ball.y - BALL_R < 0) { ball.y = BALL_R; ball.vy = Math.abs(ball.vy); }
+
+  // Paddle collision
+  if (
+    ball.vy > 0 &&
+    ball.y + BALL_R >= paddle.y &&
+    ball.y + BALL_R <= paddle.y + PAD_H + Math.abs(ball.vy) &&
+    ball.x >= paddle.x &&
+    ball.x <= paddle.x + PAD_W
+  ) {
+    // Angle based on hit position relative to paddle center
+    const hit = (ball.x - (paddle.x + PAD_W / 2)) / (PAD_W / 2); // -1 to 1
+    const speed = Math.min(
+      Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy),
+      BALL_SPEED_MAX
+    );
+    ball.vx = hit * speed * 1.1;
+    ball.vy = -Math.sqrt(Math.max(speed * speed - ball.vx * ball.vx, 0.5));
+    ball.y  = paddle.y - BALL_R - 1;
+  }
+
+  // Ball lost
+  if (ball.y - BALL_R > H) {
+    lives--;
+    livesEl.textContent = lives;
+    GameSDK.save({ highScore });
+    if (lives <= 0) {
+      gameActive = false;
+      gameOver();
+    } else {
+      // Reset ball, keep bricks and score
+      ball.x  = paddle.x + PAD_W / 2;
+      ball.y  = PAD_Y - BALL_R - 1;
+      ball.vx = (Math.random() < 0.5 ? 1 : -1) * BALL_SPEED_BASE;
+      ball.vy = -BALL_SPEED_BASE;
+    }
+  }
+}
+
+function checkBrickCollisions() {
+  for (const b of bricks) {
+    if (!b.alive) continue;
+
+    const closestX = Math.max(b.x, Math.min(ball.x, b.x + BRICK_W));
+    const closestY = Math.max(b.y, Math.min(ball.y, b.y + BRICK_H));
+    const dx = ball.x - closestX;
+    const dy = ball.y - closestY;
+
+    if (dx * dx + dy * dy < BALL_R * BALL_R) {
+      b.alive = false;
+      score++;
+      scoreEl.textContent = score;
+      if (score > highScore) {
+        highScore = score;
+        hiEl.textContent = highScore;
+      }
+      GameSDK.save({ highScore });
+
+      // Increase ball speed
+      const speed = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
+      const newSpeed = Math.min(speed + BALL_SPEED_STEP, BALL_SPEED_MAX);
+      const ratio = newSpeed / speed;
+      ball.vx *= ratio;
+      ball.vy *= ratio;
+
+      // Determine bounce axis
+      const overlapX = BALL_R - Math.abs(ball.x - closestX);
+      const overlapY = BALL_R - Math.abs(ball.y - closestY);
+      if (overlapX < overlapY) {
+        ball.vx = -ball.vx;
+      } else {
+        ball.vy = -ball.vy;
+      }
+
+      break; // one brick per frame
+    }
+  }
+
+  // All bricks cleared — level complete
+  if (bricks.every(b => !b.alive)) {
+    gameActive = false;
+    levelComplete();
+  }
+}
+
+function draw() {
+  ctx.fillStyle = '#111';
+  ctx.fillRect(0, 0, W, H);
+
+  // Bricks
+  for (const b of bricks) {
+    if (!b.alive) continue;
+    ctx.fillStyle = b.color;
+    ctx.beginPath();
+    ctx.roundRect(b.x, b.y, BRICK_W, BRICK_H, 2);
+    ctx.fill();
+  }
+
+  // Paddle
+  ctx.fillStyle = '#5c5cff';
+  ctx.beginPath();
+  ctx.roundRect(paddle.x, paddle.y, PAD_W, PAD_H, 4);
+  ctx.fill();
+
+  // Ball
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.arc(ball.x, ball.y, BALL_R, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function loop() {
+  if (!gameActive) return;
+  updatePaddle();
+  updateBall();
+  checkBrickCollisions();
+  draw();
+  rafId = requestAnimationFrame(loop);
+}
+
+async function gameOver() {
+  cancelAnimationFrame(rafId);
+  // Draw game-over message
+  ctx.fillStyle = 'rgba(0,0,0,0.6)';
+  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 28px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('GAME OVER', W / 2, H / 2 - 14);
+  ctx.font = '14px monospace';
+  ctx.fillText(`Score: ${score}  |  Best: ${highScore}`, W / 2, H / 2 + 16);
+
+  GameSDK.save({ highScore });
+  await GameSDK.showAd(); // interstitial on game over
+  startGame();
+}
+
+async function levelComplete() {
+  cancelAnimationFrame(rafId);
+  // Draw level-complete message
+  ctx.fillStyle = 'rgba(0,0,0,0.6)';
+  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = '#5cff8c';
+  ctx.font = 'bold 28px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('CLEARED!', W / 2, H / 2 - 14);
+  ctx.font = '14px monospace';
+  ctx.fillStyle = '#fff';
+  ctx.fillText(`Score: ${score}  |  Best: ${highScore}`, W / 2, H / 2 + 16);
+
+  GameSDK.save({ highScore });
+  await GameSDK.showAd(); // interstitial on level clear
+  startGame();
+}
+
+// Auto-save on tab switch / close
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) GameSDK.save({ highScore });
+});
+
+async function init() {
+  highScore = 0;
+  hiEl.textContent = 0;
+  await GameSDK.showAd(); // pre-roll
+  startGame();
+}
+
+init();
+</script>
+</body>
+</html>

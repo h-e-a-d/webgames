@@ -59,7 +59,7 @@ const GameSDK = (() => {
   function save(data) {
     clearTimeout(saveTimer);
     saveTimer = setTimeout(() => {
-      parent.postMessage({ type: 'save', data }, window.location.origin);
+      parent.postMessage({ type: 'save', data }, '*');
     }, SAVE_DEBOUNCE_MS);
   }
 

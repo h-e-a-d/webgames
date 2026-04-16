@@ -36,7 +36,7 @@ async function loadSave() {
   const { data } = await res.json();
   if (data) {
     const deliver = () => {
-      frame.contentWindow.postMessage({ type: 'load-save', data }, window.location.origin);
+      frame.contentWindow.postMessage({ type: 'load-save', data }, '*');
     };
     if (frame.contentWindow?.document?.readyState === 'complete') {
       deliver();

@@ -6,6 +6,12 @@ module.exports = function (eleventyConfig) {
   eleventyConfig.addPassthroughCopy({ "src/css": "css" });
   eleventyConfig.addPassthroughCopy({ "src/js": "js" });
 
+  // Expose env vars to templates
+  eleventyConfig.addGlobalData("env", {
+    clerkPublishableKey: process.env.CLERK_PUBLISHABLE_KEY || '',
+    siteUrl: (process.env.SITE_URL || 'https://yourdomain.com').replace(/\/$/, ''),
+  });
+
   // selectattr(arr, attr, val?) — filters array by attr (truthy check or equality)
   eleventyConfig.addFilter("selectattr", function (arr, attr, val) {
     if (!Array.isArray(arr)) return [];
@@ -25,6 +31,11 @@ module.exports = function (eleventyConfig) {
   eleventyConfig.addFilter("slice", function (arr, start, end) {
     if (!Array.isArray(arr)) return [];
     return arr.slice(start, end);
+  });
+
+  // jsEscape — safely JSON-encodes a value for use inside <script> blocks
+  eleventyConfig.addFilter("jsEscape", function (val) {
+    return JSON.stringify(val ?? '');
   });
 
   return {
