@@ -12,6 +12,8 @@
   {% if ogImage %}<meta property="og:image" content="{{ env.siteUrl }}{{ ogImage }}">{% endif %}
   <meta name="twitter:card"       content="summary_large_image">
   <link rel="canonical"           href="{{ env.siteUrl }}{{ page.url }}">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="/manifest.json">
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
   <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
   <link rel="stylesheet" href="/css/main.css">
@@ -178,6 +180,12 @@
   {% endif %}
 </script>
 <script src="/js/portal.js"></script>
+<script>
+  // Register kill-switch SW to clear old cached assets from previous site version
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js');
+  }
+</script>
 {% if includeShell %}
 <script src="/js/shell.js"></script>
 {% endif %}

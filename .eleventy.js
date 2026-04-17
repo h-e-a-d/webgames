@@ -4,9 +4,12 @@ module.exports = function (eleventyConfig) {
   eleventyConfig.addPassthroughCopy("games");
   eleventyConfig.addPassthroughCopy("public");
   // Cloudflare Pages control files must live at the output root
-  eleventyConfig.addPassthroughCopy({ "public/_headers":   "_headers"   });
-  eleventyConfig.addPassthroughCopy({ "public/_redirects": "_redirects" });
-  eleventyConfig.addPassthroughCopy({ "public/llms.txt":   "llms.txt"   });
+  eleventyConfig.addPassthroughCopy({ "public/_headers":    "_headers"    });
+  eleventyConfig.addPassthroughCopy({ "public/_redirects":  "_redirects"  });
+  eleventyConfig.addPassthroughCopy({ "public/llms.txt":    "llms.txt"    });
+  eleventyConfig.addPassthroughCopy({ "public/sw.js":       "sw.js"       });
+  eleventyConfig.addPassthroughCopy({ "public/favicon.svg": "favicon.svg" });
+  eleventyConfig.addPassthroughCopy({ "public/manifest.json": "manifest.json" });
   eleventyConfig.addPassthroughCopy({ "src/css": "css" });
   eleventyConfig.addPassthroughCopy({ "src/js": "js" });
 
