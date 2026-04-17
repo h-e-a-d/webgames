@@ -1,7 +1,4 @@
-# Normalize trailing slashes (Cloudflare Pages handles most of this automatically)
-# Ensure non-www redirects to www
-http://kloopik.com/*  https://www.kloopik.com/:splat  301
-https://kloopik.com/*  https://www.kloopik.com/:splat  301
+# Non-www → www redirect is handled by functions/_middleware.js
+# (Cloudflare Pages _redirects does not support absolute source URLs)
 
-# SPA-style fallback — serve 404 page for unmatched routes
-/*  /index.html  404
+# 404 is handled automatically via _site/404.html

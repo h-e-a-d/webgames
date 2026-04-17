@@ -16,7 +16,13 @@
   <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
   <link rel="stylesheet" href="/css/main.css">
   <!-- Clerk auth — deferred so it doesn't block rendering -->
-  <script src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@5/dist/clerk.browser.js" defer crossorigin="anonymous"></script>
+  {% if env.clerkPublishableKey %}
+  <script
+    src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@5/dist/clerk.browser.js"
+    data-clerk-publishable-key="{{ env.clerkPublishableKey }}"
+    defer
+    crossorigin="anonymous"></script>
+  {% endif %}
 
   {% if page.url == "/" %}
   <script type="application/ld+json">
@@ -148,29 +154,28 @@
 
 <script>
   // Clerk auth init — runs after defer'd clerk.browser.js loads
+  {% if env.clerkPublishableKey %}
   document.addEventListener('DOMContentLoaded', function () {
-    var key = '{{ env.clerkPublishableKey }}';
-    if (!key) return;
     var out = document.getElementById('auth-signed-out');
     var inn = document.getElementById('auth-signed-in');
     var nameEl = document.getElementById('user-name');
 
     function initClerk() {
-      if (typeof Clerk === 'undefined') { setTimeout(initClerk, 100); return; }
-      var clerk = new Clerk(key);
-      clerk.load().then(function () {
-        window.__clerk = clerk;
-        if (clerk.user) {
+      if (typeof window.Clerk === 'undefined') { setTimeout(initClerk, 100); return; }
+      window.Clerk.load().then(function () {
+        window.__clerk = window.Clerk;
+        if (window.Clerk.user) {
           out.classList.add('hidden');
           inn.classList.remove('hidden');
-          nameEl.textContent = clerk.user.firstName || clerk.user.emailAddresses[0].emailAddress;
+          nameEl.textContent = window.Clerk.user.firstName || window.Clerk.user.emailAddresses[0].emailAddress;
         }
-        document.getElementById('sign-in-btn')?.addEventListener('click', function () { clerk.openSignIn(); });
-        document.getElementById('sign-out-btn')?.addEventListener('click', function () { clerk.signOut().then(function () { location.reload(); }); });
+        document.getElementById('sign-in-btn')?.addEventListener('click', function () { window.Clerk.openSignIn(); });
+        document.getElementById('sign-out-btn')?.addEventListener('click', function () { window.Clerk.signOut().then(function () { location.reload(); }); });
       });
     }
     initClerk();
   });
+  {% endif %}
 </script>
 <script src="/js/portal.js"></script>
 {% if includeShell %}
