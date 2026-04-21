@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "rss": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "rss-feeds-mcp",
+        "https://gamemonetize.com/feed.php?format=0&num=50&page=1"
+      ]
+    },
+    "kie-ai": {
+      "command": "npx",
+      "args": ["-y", "@andrewlwn77/kie-ai-mcp-server"],
+      "env": {
+        "KIE_AI_API_KEY": "e92df8ea0ffc2a36f1f653e29323c480"
+      }
+    }
+  }
+}
