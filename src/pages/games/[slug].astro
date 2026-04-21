@@ -1,0 +1,133 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import GamePlayer from '../../components/GamePlayer.astro';
+import GameGrid from '../../components/GameGrid.astro';
+import FavoriteButton from '../../components/FavoriteButton.astro';
+import { getAllGames, getGamesByCategory } from '../../lib/games';
+import { getCategory } from '../../data/categories';
+import {
+  buildGameTitle,
+  buildGameDescription,
+  buildVideoGameJsonLd,
+  buildBreadcrumbJsonLd,
+} from '../../lib/seo';
+
+export async function getStaticPaths() {
+  const games = await getAllGames();
+  return games.map((game) => ({ params: { slug: game.slug }, props: { game } }));
+}
+
+const { game } = Astro.props;
+const { Content } = await game.render();
+
+const siteUrl = import.meta.env.PUBLIC_SITE_URL;
+const pagePath = `/games/${game.slug}/`;
+const canonical = `${siteUrl}${pagePath}`;
+
+const description = buildGameDescription(game.body);
+const firstCategory = game.data.categories[0];
+const category = getCategory(firstCategory);
+
+const related = (await getGamesByCategory(firstCategory))
+  .filter((g) => g.slug !== game.slug)
+  .slice(0, 6);
+
+const thumbAbs = game.data.thumbnail.src.startsWith('http')
+  ? game.data.thumbnail.src
+  : `${siteUrl}${game.data.thumbnail.src}`;
+
+const videoGameLd = buildVideoGameJsonLd({
+  name: game.data.title,
+  description,
+  url: canonical,
+  image: thumbAbs,
+  genre: game.data.categories.map((c) => getCategory(c)?.name ?? c),
+});
+
+const breadcrumbLd = buildBreadcrumbJsonLd([
+  { name: 'Home', url: `${siteUrl}/` },
+  { name: category?.name ?? 'Games', url: `${siteUrl}/categories/${firstCategory}/` },
+  { name: game.data.title, url: canonical },
+]);
+---
+<BaseLayout
+  title={buildGameTitle(game.data.title)}
+  description={description}
+  canonicalPath={pagePath}
+  slug={game.slug}
+  collection="games"
+  jsonLd={[videoGameLd, breadcrumbLd]}
+>
+  <div class="container">
+    <Breadcrumbs items={[
+      { name: 'Home', href: '/' },
+      { name: category?.name ?? 'Games', href: `/categories/${firstCategory}/` },
+      { name: game.data.title },
+    ]} />
+
+    <h1>{game.data.title}</h1>
+
+    <GamePlayer
+      title={game.data.title}
+      embedUrl={game.data.embedUrl}
+      thumbnailSrc={game.data.thumbnail.src}
+      thumbnailWidth={game.data.thumbnail.width}
+      thumbnailHeight={game.data.thumbnail.height}
+      orientation={game.data.orientation}
+    />
+
+    <div class="game-actions">
+      <FavoriteButton slug={game.slug} title={game.data.title} />
+    </div>
+
+    <div class="game-layout">
+      <article class="game-body">
+        <Content />
+      </article>
+      <aside class="game-meta" aria-label="Game details">
+        <dl>
+          <dt>Categories</dt>
+          <dd>{game.data.categories.map((c) => getCategory(c)?.name ?? c).join(', ')}</dd>
+          <dt>Controls</dt>
+          <dd>{game.data.controls.join(', ')}</dd>
+          <dt>Orientation</dt>
+          <dd>{game.data.orientation}</dd>
+        </dl>
+      </aside>
+    </div>
+
+    {related.length > 0 && (
+      <section class="section-spacing">
+        <h2>If you like this</h2>
+        <GameGrid games={related} eagerCount={0} />
+      </section>
+    )}
+  </div>
+</BaseLayout>
+
+<style>
+  .game-actions { margin-top: 1rem; }
+  .game-layout {
+    display: grid;
+    gap: var(--space-6);
+    grid-template-columns: minmax(0, 1fr);
+    margin-top: var(--space-6);
+  }
+  @media (min-width: 768px) {
+    .game-layout { grid-template-columns: 1fr 18rem; }
+  }
+  .game-body :global(h2) { font-size: var(--fs-xl); margin-top: var(--space-6); }
+  .game-body :global(p) { font-size: var(--fs-md); }
+  .game-meta {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-4);
+    background: var(--color-surface);
+    font-size: var(--fs-sm);
+  }
+  .game-meta dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: var(--space-2) var(--space-4); }
+  .game-meta dt { font-weight: 600; color: var(--color-muted); }
+  .game-meta dd { margin: 0; }
+  .section-spacing { margin-top: var(--space-10); }
+</style>

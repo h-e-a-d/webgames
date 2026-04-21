@@ -1,0 +1,120 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getAllGames } from '../lib/games';
+
+const games = await getAllGames();
+const catalog = games.map((g) => ({
+  slug: g.slug,
+  title: g.data.title,
+  thumbnail: g.data.thumbnail.src,
+  categories: g.data.categories,
+}));
+---
+
+<BaseLayout
+  title="Your favorites | Kloopik"
+  description="The games you've saved on Kloopik. Stored locally in your browser — nothing synced, no account required."
+  noindex={true}
+>
+  <section class="favorites">
+    <h1>Your favorites</h1>
+    <p class="favorites-empty" data-empty>You haven't saved any games yet. Browse the catalog and tap the ★ button on any game to save it here.</p>
+
+    <ul class="favorites-grid" data-grid hidden>
+      <!-- populated client-side -->
+    </ul>
+
+    <template id="favorite-card-template">
+      <li class="favorite-card">
+        <a class="favorite-card-link" href="">
+          <img class="favorite-card-thumb" src="" alt="" width="512" height="384" loading="lazy" />
+          <span class="favorite-card-title"></span>
+        </a>
+        <button type="button" class="favorite-card-remove" aria-label="Remove from favorites">×</button>
+      </li>
+    </template>
+  </section>
+
+  <script is:inline define:vars={{ catalog }}>
+    window.__KLOOPIK_CATALOG__ = catalog;
+  </script>
+
+  <script>
+    import { getFavorites, toggleFavorite } from '../lib/favorites';
+
+    interface CatalogEntry {
+      slug: string;
+      title: string;
+      thumbnail: string;
+      categories: string[];
+    }
+
+    const catalog = ((window as unknown as { __KLOOPIK_CATALOG__: CatalogEntry[] }).__KLOOPIK_CATALOG__) ?? [];
+    const bySlug = new Map(catalog.map((c) => [c.slug, c]));
+
+    const grid = document.querySelector<HTMLElement>('[data-grid]');
+    const empty = document.querySelector<HTMLElement>('[data-empty]');
+    const tpl = document.querySelector<HTMLTemplateElement>('#favorite-card-template');
+    if (!grid || !empty || !tpl) throw new Error('favorites page: missing DOM');
+
+    function render() {
+      grid!.innerHTML = '';
+      const favs = getFavorites();
+      const known = favs.map((s) => bySlug.get(s)).filter((c): c is CatalogEntry => c !== undefined);
+
+      if (known.length === 0) {
+        grid!.hidden = true;
+        empty!.hidden = false;
+        return;
+      }
+      empty!.hidden = true;
+      grid!.hidden = false;
+
+      for (const entry of known) {
+        const node = tpl!.content.cloneNode(true) as DocumentFragment;
+        const link = node.querySelector<HTMLAnchorElement>('.favorite-card-link')!;
+        const img = node.querySelector<HTMLImageElement>('.favorite-card-thumb')!;
+        const title = node.querySelector<HTMLSpanElement>('.favorite-card-title')!;
+        const remove = node.querySelector<HTMLButtonElement>('.favorite-card-remove')!;
+        link.href = `/games/${entry.slug}/`;
+        img.src = entry.thumbnail;
+        img.alt = entry.title;
+        title.textContent = entry.title;
+        remove.addEventListener('click', () => {
+          toggleFavorite(entry.slug);
+          render();
+        });
+        grid!.appendChild(node);
+      }
+    }
+
+    render();
+  </script>
+</BaseLayout>
+
+<style>
+  .favorites { padding: 2rem 0 4rem; }
+  .favorites-grid {
+    list-style: none;
+    padding: 0;
+    margin: 2rem 0 0;
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  }
+  .favorite-card {
+    position: relative;
+    background: var(--color-surface-2);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+  .favorite-card-link { display: block; color: inherit; text-decoration: none; }
+  .favorite-card-thumb { width: 100%; height: auto; display: block; }
+  .favorite-card-title { display: block; padding: 0.5rem 0.75rem; font-weight: 600; }
+  .favorite-card-remove {
+    position: absolute; top: 0.25rem; right: 0.25rem;
+    width: 1.75rem; height: 1.75rem; border-radius: 50%;
+    border: 0; background: rgba(0, 0, 0, 0.6); color: white;
+    cursor: pointer; font-size: 1rem; line-height: 1;
+  }
+</style>

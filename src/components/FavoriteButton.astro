@@ -1,0 +1,73 @@
+---
+interface Props {
+  slug: string;
+  title: string;
+}
+const { slug, title } = Astro.props;
+---
+
+<button
+  class="favorite-button"
+  data-slug={slug}
+  data-title={title}
+  aria-pressed="false"
+  type="button"
+>
+  <span class="favorite-icon" aria-hidden="true">☆</span>
+  <span class="favorite-label">Save to favorites</span>
+</button>
+
+<style>
+  .favorite-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.875rem;
+    background: var(--color-surface-2);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font: inherit;
+    cursor: pointer;
+    transition: background 120ms ease, border-color 120ms ease;
+  }
+  .favorite-button:hover {
+    background: var(--color-surface-3);
+    border-color: var(--color-accent);
+  }
+  .favorite-button[aria-pressed='true'] {
+    background: var(--color-accent-soft);
+    border-color: var(--color-accent);
+    color: var(--color-accent-strong);
+  }
+  .favorite-icon {
+    font-size: 1.25em;
+    line-height: 1;
+  }
+</style>
+
+<script>
+  import { isFavorite, toggleFavorite } from '../lib/favorites';
+
+  const buttons = document.querySelectorAll<HTMLButtonElement>('.favorite-button');
+  for (const btn of buttons) {
+    const slug = btn.dataset.slug;
+    if (!slug) continue;
+
+    const sync = () => {
+      const on = isFavorite(slug);
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      const label = btn.querySelector<HTMLSpanElement>('.favorite-label');
+      const icon = btn.querySelector<HTMLSpanElement>('.favorite-icon');
+      if (label) label.textContent = on ? 'In your favorites' : 'Save to favorites';
+      if (icon) icon.textContent = on ? '★' : '☆';
+    };
+
+    sync();
+
+    btn.addEventListener('click', () => {
+      toggleFavorite(slug);
+      sync();
+    });
+  }
+</script>

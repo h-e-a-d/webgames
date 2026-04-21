@@ -1,0 +1,40 @@
+{
+  "name": "kloopik",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "check": "astro check",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "build:og": "tsx scripts/build-og-images.mjs",
+    "prebuild": "npm run build:og",
+    "ingest:gamemonetize": "tsx scripts/ingest-gamemonetize.ts",
+    "new:post": "tsx scripts/new-post.ts",
+    "check:links": "tsx scripts/check-links.ts"
+  },
+  "dependencies": {
+    "@astrojs/mdx": "^5.0.3",
+    "@astrojs/rss": "^4.0.18",
+    "@astrojs/sitemap": "^3.7.2",
+    "astro": "^5.0.0",
+    "fuse.js": "^7.3.0"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.0",
+    "@lhci/cli": "^0.15.1",
+    "@resvg/resvg-js": "^2.6.2",
+    "@types/jsdom": "^28.0.1",
+    "commander": "^14.0.3",
+    "gray-matter": "^4.0.3",
+    "jsdom": "^29.0.2",
+    "satori": "^0.26.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}

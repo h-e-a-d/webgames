@@ -1,0 +1,42 @@
+---
+const year = new Date().getFullYear();
+---
+<footer class="site-footer">
+  <div class="container site-footer__row">
+    <p class="site-footer__copy">© {year} Kloopik. Games are the property of their respective owners.</p>
+    <nav aria-label="Footer">
+      <ul>
+        <li><a href="/about/">About</a></li>
+        <li><a href="/privacy/">Privacy</a></li>
+        <li><a href="/terms/">Terms</a></li>
+        <li><a href="/rss.xml">RSS</a></li>
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    border-top: 1px solid var(--color-border);
+    padding: var(--space-8) 0;
+    margin-top: var(--space-12);
+    background: var(--color-surface);
+    font-size: var(--fs-sm);
+    color: var(--color-muted);
+  }
+  .site-footer__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+  }
+  .site-footer ul {
+    display: flex;
+    gap: var(--space-5);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .site-footer a { color: var(--color-muted); }
+</style>

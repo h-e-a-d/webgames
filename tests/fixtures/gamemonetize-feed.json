@@ -1,0 +1,38 @@
+[
+  {
+    "title": "Test Puzzle",
+    "id": "abc123",
+    "url": "https://html5.gamemonetize.co/abc123/",
+    "thumb": "https://img.gamemonetize.com/abc123/512x384.jpg",
+    "width": 512,
+    "height": 384,
+    "category": "Puzzles",
+    "tags": "puzzle,logic,numbers",
+    "description": "A test puzzle game for unit testing.",
+    "instructions": "Use mouse and keyboard to play."
+  },
+  {
+    "title": "Shooter Madness",
+    "id": "def456",
+    "url": "https://html5.gamemonetize.co/def456/",
+    "thumb": "https://img.gamemonetize.com/def456/512x384.jpg",
+    "width": 512,
+    "height": 384,
+    "category": "Shooting",
+    "tags": "shooter,action",
+    "description": "Fast-paced browser shooter.",
+    "instructions": "WASD to move, mouse to aim."
+  },
+  {
+    "title": "Unknown Genre",
+    "id": "ghi789",
+    "url": "https://html5.gamemonetize.co/ghi789/",
+    "thumb": "https://img.gamemonetize.com/ghi789/512x384.jpg",
+    "width": 512,
+    "height": 384,
+    "category": "Obscure",
+    "tags": "weird",
+    "description": "A game with no matching category.",
+    "instructions": "Touch to play."
+  }
+]

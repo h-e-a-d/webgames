@@ -1,0 +1,128 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Search games | Kloopik"
+  description="Search the Kloopik games catalog."
+  noindex={true}
+>
+  <section class="search-page">
+    <h1>Search</h1>
+    <form data-search-form>
+      <input
+        type="search"
+        name="q"
+        class="search-page-input"
+        placeholder="Search games..."
+        aria-label="Search games"
+        autocomplete="off"
+      />
+    </form>
+    <p class="search-page-summary" data-summary></p>
+    <ul class="search-page-results" data-results></ul>
+  </section>
+
+  <script>
+    import Fuse from 'fuse.js';
+
+    interface Entry {
+      slug: string;
+      title: string;
+      thumbnail: string;
+      categories: string[];
+      tags: string[];
+    }
+
+    const input = document.querySelector<HTMLInputElement>('[data-search-form] input[name="q"]');
+    const summary = document.querySelector<HTMLElement>('[data-summary]');
+    const list = document.querySelector<HTMLUListElement>('[data-results]');
+    if (!input || !summary || !list) throw new Error('search page: missing DOM');
+
+    const params = new URLSearchParams(window.location.search);
+    const initial = params.get('q') ?? '';
+    input.value = initial;
+
+    let fuse: Fuse<Entry> | null = null;
+
+    async function ensureIndex() {
+      if (fuse) return;
+      const res = await fetch('/search-index.json');
+      const data = (await res.json()) as Entry[];
+      fuse = new Fuse(data, {
+        keys: [
+          { name: 'title', weight: 0.7 },
+          { name: 'tags', weight: 0.2 },
+          { name: 'categories', weight: 0.1 },
+        ],
+        threshold: 0.35,
+        ignoreLocation: true,
+        minMatchCharLength: 2,
+      });
+    }
+
+    function render(q: string) {
+      if (!fuse) return;
+      const query = q.trim();
+      if (query.length < 2) {
+        summary.textContent = 'Type at least 2 characters to search.';
+        list.innerHTML = '';
+        return;
+      }
+      const results = fuse.search(query).map((r) => r.item);
+      summary.textContent = `${results.length} result${results.length === 1 ? '' : 's'} for "${query}"`;
+      list.innerHTML = results
+        .map(
+          (r) => `
+            <li class="search-page-card">
+              <a href="/games/${encodeURIComponent(r.slug)}/">
+                <img src="${r.thumbnail}" alt="" width="240" height="180" loading="lazy" />
+                <span>${r.title}</span>
+              </a>
+            </li>
+          `,
+        )
+        .join('');
+    }
+
+    (async () => {
+      await ensureIndex();
+      render(initial);
+    })();
+
+    input.addEventListener('input', () => render(input.value));
+
+    document.querySelector<HTMLFormElement>('[data-search-form]')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const params = new URLSearchParams({ q: input.value.trim() });
+      window.history.replaceState({}, '', `/search/?${params.toString()}`);
+      render(input.value);
+    });
+  </script>
+
+  <style>
+    .search-page { padding: 2rem 0 4rem; }
+    .search-page-input {
+      width: 100%;
+      max-width: 520px;
+      padding: 0.6rem 0.875rem;
+      font-size: 1.1rem;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      color: var(--color-fg);
+    }
+    .search-page-summary { margin: 1.25rem 0 0.5rem; color: var(--color-muted); }
+    .search-page-results {
+      list-style: none; padding: 0; margin: 0;
+      display: grid; gap: 1rem;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    }
+    .search-page-card a {
+      display: block; color: inherit; text-decoration: none;
+      background: var(--color-surface); border-radius: var(--radius-md); overflow: hidden;
+    }
+    .search-page-card img { width: 100%; height: auto; display: block; }
+    .search-page-card span { display: block; padding: 0.5rem 0.75rem; font-weight: 600; }
+  </style>
+</BaseLayout>

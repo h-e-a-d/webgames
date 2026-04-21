@@ -1,0 +1,96 @@
+---
+interface Props {
+  title: string;
+  embedUrl: string;
+  thumbnailSrc: string;
+  thumbnailWidth: number;
+  thumbnailHeight: number;
+  orientation: 'landscape' | 'portrait' | 'both';
+}
+
+const { title, embedUrl, thumbnailSrc, thumbnailWidth, thumbnailHeight, orientation } = Astro.props;
+---
+<div
+  class="game-player"
+  data-embed-url={embedUrl}
+  data-orientation={orientation}
+>
+  <div class="game-player__poster">
+    <img
+      src={thumbnailSrc}
+      width={thumbnailWidth}
+      height={thumbnailHeight}
+      alt={`${title} — press play to start`}
+      loading="eager"
+      fetchpriority="high"
+      decoding="async"
+    />
+    <button type="button" class="game-player__play" aria-label={`Play ${title}`}>
+      <span aria-hidden="true" class="game-player__play-icon">▶</span>
+      Play
+    </button>
+  </div>
+</div>
+
+<style>
+  .game-player {
+    position: relative;
+    width: 100%;
+    background: #000;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    aspect-ratio: 16 / 9;
+  }
+  .game-player[data-orientation='portrait'] { aspect-ratio: 9 / 16; max-width: 24rem; margin: 0 auto; }
+  .game-player__poster, .game-player__poster img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .game-player__play {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    padding: var(--space-3) var(--space-6);
+    background: rgba(255,255,255,0.95);
+    border: none;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: var(--fs-lg);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+  .game-player__play:hover, .game-player__play:focus { background: #fff; }
+  .game-player iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLElement>('.game-player').forEach((root) => {
+    const playBtn = root.querySelector<HTMLButtonElement>('.game-player__play');
+    const poster = root.querySelector<HTMLElement>('.game-player__poster');
+    const embedUrl = root.dataset.embedUrl;
+    if (!playBtn || !poster || !embedUrl) return;
+
+    playBtn.addEventListener('click', () => {
+      const iframe = document.createElement('iframe');
+      iframe.src = embedUrl;
+      iframe.allow = 'autoplay; fullscreen';
+      iframe.allowFullscreen = true;
+      iframe.loading = 'eager';
+      iframe.title = 'Game';
+      poster.style.display = 'none';
+      root.appendChild(iframe);
+    });
+  });
+</script>

@@ -1,0 +1,67 @@
+---
+import { CATEGORIES } from '../data/categories';
+import SearchBox from './SearchBox.astro';
+---
+<header class="site-header">
+  <div class="container site-header__row">
+    <a href="/" class="site-logo" aria-label="Kloopik home">Kloopik</a>
+    <div class="header-search"><SearchBox /></div>
+    <nav class="site-nav" aria-label="Primary">
+      <ul>
+        <li><a href="/games/">All games</a></li>
+        {CATEGORIES.slice(0, 5).map((c) => (
+          <li><a href={`/categories/${c.id}/`}>{c.name}</a></li>
+        ))}
+        <li><a href="/favorites/">Favorites</a></li>
+        <li><a href="/blog/">Blog</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<style>
+  .site-header {
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-bg);
+    height: var(--header-h);
+    display: flex;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .site-header__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-6);
+    width: 100%;
+  }
+  .site-logo {
+    font-size: var(--fs-lg);
+    font-weight: 800;
+    color: var(--color-fg);
+  }
+  .site-logo:hover, .site-logo:focus { text-decoration: none; }
+  .site-nav ul {
+    display: flex;
+    gap: var(--space-5);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    flex-wrap: wrap;
+  }
+  .site-nav a {
+    color: var(--color-fg);
+    font-size: var(--fs-sm);
+    font-weight: 500;
+  }
+  .header-search {
+    flex: 1;
+    max-width: 300px;
+  }
+  @media (max-width: 640px) {
+    .site-nav { display: none; }
+    .header-search { display: none; }
+  }
+</style>

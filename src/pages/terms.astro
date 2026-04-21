@@ -1,0 +1,31 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const lastUpdated = '2026-04-21';
+---
+<BaseLayout
+  title="Terms — Kloopik"
+  description="Terms of use for Kloopik."
+  canonicalPath="/terms/"
+>
+  <article class="container static-page">
+    <h1>Terms of use</h1>
+    <p><strong>Last updated:</strong> {lastUpdated}</p>
+
+    <h2>What Kloopik is</h2>
+    <p>Kloopik is a directory of browser games hosted by third parties. We provide the catalog and commentary; the games themselves belong to their respective owners.</p>
+
+    <h2>No warranty</h2>
+    <p>Games are provided "as is" by their publishers. We don't guarantee availability, performance, or fitness for any particular purpose.</p>
+
+    <h2>Content</h2>
+    <p>Reviews and editorial content on Kloopik are ours. Please don't republish in bulk without permission.</p>
+
+    <h2>Contact</h2>
+    <p>Legal questions: <a href="mailto:legal@kloopik.com">legal@kloopik.com</a>.</p>
+  </article>
+</BaseLayout>
+
+<style>
+  .static-page { max-width: 44rem; }
+  .static-page h2 { margin-top: var(--space-8); }
+</style>

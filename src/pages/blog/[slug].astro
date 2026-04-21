@@ -1,0 +1,77 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import GameGrid from '../../components/GameGrid.astro';
+import { getAllBlog, getGamesBySlugs, assertSlugsResolve } from '../../lib/games';
+import { buildArticleJsonLd, buildBreadcrumbJsonLd } from '../../lib/seo';
+
+export async function getStaticPaths() {
+  const posts = await getAllBlog();
+  return posts.map((post) => ({ params: { slug: post.slug }, props: { post } }));
+}
+
+const { post } = Astro.props;
+const { Content } = await post.render();
+
+await assertSlugsResolve(post.data.relatedGames, `blog/${post.slug}.relatedGames`);
+const relatedGames = await getGamesBySlugs(post.data.relatedGames);
+
+const siteUrl = import.meta.env.PUBLIC_SITE_URL;
+const pagePath = `/blog/${post.slug}/`;
+const canonical = `${siteUrl}${pagePath}`;
+
+const articleLd = buildArticleJsonLd({
+  headline: post.data.title,
+  description: post.data.description,
+  url: canonical,
+  datePublished: post.data.publishedAt.toISOString(),
+  dateModified: post.data.updatedAt?.toISOString() ?? post.data.publishedAt.toISOString(),
+  image: post.data.hero ? `${siteUrl}${post.data.hero.src}` : undefined,
+});
+
+const breadcrumbLd = buildBreadcrumbJsonLd([
+  { name: 'Home', url: `${siteUrl}/` },
+  { name: 'Blog', url: `${siteUrl}/blog/` },
+  { name: post.data.title, url: canonical },
+]);
+---
+<BaseLayout
+  title={`${post.data.title} — Kloopik`}
+  description={post.data.description}
+  canonicalPath={pagePath}
+  ogType="article"
+  slug={post.slug}
+  collection="blog"
+  jsonLd={[articleLd, breadcrumbLd]}
+>
+  <article class="container blog-post">
+    <Breadcrumbs items={[
+      { name: 'Home', href: '/' },
+      { name: 'Blog', href: '/blog/' },
+      { name: post.data.title },
+    ]} />
+    <h1>{post.data.title}</h1>
+    <p class="blog-post__meta">
+      <time datetime={post.data.publishedAt.toISOString()}>
+        {post.data.publishedAt.toISOString().slice(0, 10)}
+      </time>
+    </p>
+    <div class="blog-post__body">
+      <Content />
+    </div>
+    {relatedGames.length > 0 && (
+      <section class="section-spacing">
+        <h2>Games mentioned in this post</h2>
+        <GameGrid games={relatedGames} eagerCount={0} />
+      </section>
+    )}
+  </article>
+</BaseLayout>
+
+<style>
+  .blog-post { max-width: 44rem; }
+  .blog-post__meta { color: var(--color-muted); font-size: var(--fs-sm); }
+  .blog-post__body :global(h2) { margin-top: var(--space-8); }
+  .blog-post__body :global(p) { font-size: var(--fs-lg); line-height: 1.6; }
+  .section-spacing { margin-top: var(--space-10); }
+</style>

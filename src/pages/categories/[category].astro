@@ -1,0 +1,66 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import CategoryFilter from '../../components/CategoryFilter.astro';
+import GameGrid from '../../components/GameGrid.astro';
+import { CATEGORIES } from '../../data/categories';
+import { getAllGames } from '../../lib/games';
+import { sortGames } from '../../lib/sort';
+import { PINS } from '../../data/featured';
+import { buildBreadcrumbJsonLd } from '../../lib/seo';
+
+export async function getStaticPaths() {
+  return CATEGORIES.map((c) => ({ params: { category: c.id }, props: { category: c } }));
+}
+
+const { category } = Astro.props;
+const allGames = await getAllGames();
+const sortable = allGames.map((g) => ({
+  slug: g.slug,
+  featured: g.data.featured,
+  rank: g.data.rank,
+  addedAt: g.data.addedAt,
+  categories: g.data.categories,
+}));
+const orderedSlugs = sortGames(sortable, { surface: 'category', category: category.id, pins: PINS })
+  .map((g) => g.slug);
+const bySlug = new Map(allGames.map((g) => [g.slug, g] as const));
+const ordered = orderedSlugs.map((s) => bySlug.get(s)!).filter((g) => g !== undefined);
+
+const shouldIndex = ordered.length >= 6;
+
+const siteUrl = import.meta.env.PUBLIC_SITE_URL;
+const breadcrumbLd = buildBreadcrumbJsonLd([
+  { name: 'Home', url: `${siteUrl}/` },
+  { name: category.name, url: `${siteUrl}/categories/${category.id}/` },
+]);
+---
+<BaseLayout
+  title={`${category.name} games — Kloopik`}
+  description={category.description}
+  canonicalPath={`/categories/${category.id}/`}
+  jsonLd={breadcrumbLd}
+  noindex={!shouldIndex}
+>
+  <div class="container">
+    <Breadcrumbs items={[
+      { name: 'Home', href: '/' },
+      { name: category.name },
+    ]} />
+    <h1>{category.name} games</h1>
+    <p class="category-intro">{category.description}</p>
+    <CategoryFilter activeId={category.id} />
+    {ordered.length > 0
+      ? <GameGrid games={ordered} eagerCount={8} />
+      : <p>No games in this category yet — check back soon.</p>
+    }
+  </div>
+</BaseLayout>
+
+<style>
+  .category-intro {
+    color: var(--color-muted);
+    max-width: 50rem;
+    margin-bottom: var(--space-6);
+  }
+</style>

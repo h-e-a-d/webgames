@@ -1,0 +1,166 @@
+---
+interface Props {
+  placeholder?: string;
+}
+const { placeholder = 'Search games...' } = Astro.props;
+---
+
+<div class="search-box" data-search>
+  <input
+    type="search"
+    class="search-input"
+    placeholder={placeholder}
+    aria-label="Search games"
+    autocomplete="off"
+  />
+  <ul class="search-results" role="listbox" hidden></ul>
+</div>
+
+<style>
+  .search-box { position: relative; width: 100%; max-width: 420px; }
+  .search-input {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    font: inherit;
+    color: var(--color-fg);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+  }
+  .search-input:focus {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 1px;
+  }
+  .search-results {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0; right: 0;
+    list-style: none;
+    margin: 0;
+    padding: 0.25rem 0;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    max-height: 420px;
+    overflow-y: auto;
+    z-index: 10;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  }
+  .search-results li { margin: 0; }
+  .search-results a {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    color: inherit;
+    text-decoration: none;
+  }
+  .search-results a:hover,
+  .search-results a:focus {
+    background: var(--color-surface);
+  }
+  .search-results img { width: 48px; height: 36px; object-fit: cover; border-radius: 3px; }
+</style>
+
+<script>
+  import Fuse from 'fuse.js';
+
+  interface Entry {
+    slug: string;
+    title: string;
+    thumbnail: string;
+    categories: string[];
+    tags: string[];
+  }
+
+  const FUSE_OPTS = {
+    keys: [
+      { name: 'title', weight: 0.7 },
+      { name: 'tags', weight: 0.2 },
+      { name: 'categories', weight: 0.1 },
+    ],
+    threshold: 0.35,
+    ignoreLocation: true,
+    minMatchCharLength: 2,
+  } as const;
+
+  const MAX_RESULTS = 8;
+
+  let fuse: Fuse<Entry> | null = null;
+  let indexLoading: Promise<void> | null = null;
+
+  function loadIndex(): Promise<void> {
+    if (fuse) return Promise.resolve();
+    if (indexLoading) return indexLoading;
+    indexLoading = fetch('/search-index.json')
+      .then((res) => {
+        if (!res.ok) throw new Error(`search-index.json: ${res.status}`);
+        return res.json() as Promise<Entry[]>;
+      })
+      .then((data) => {
+        fuse = new Fuse(data, FUSE_OPTS);
+      })
+      .catch((err) => {
+        console.error('[search] failed to load index', err);
+        indexLoading = null;
+      });
+    return indexLoading;
+  }
+
+  function initBox(container: HTMLElement) {
+    const input = container.querySelector<HTMLInputElement>('.search-input');
+    const list = container.querySelector<HTMLUListElement>('.search-results');
+    if (!input || !list) return;
+
+    const render = (query: string) => {
+      if (!fuse || query.trim().length < 2) {
+        list.hidden = true;
+        list.innerHTML = '';
+        return;
+      }
+      const results = fuse.search(query).slice(0, MAX_RESULTS).map((r) => r.item);
+      if (results.length === 0) {
+        list.hidden = true;
+        list.innerHTML = '';
+        return;
+      }
+      list.innerHTML = results
+        .map(
+          (r) => `
+            <li role="option">
+              <a href="/games/${encodeURIComponent(r.slug)}/">
+                <img src="${r.thumbnail}" alt="" width="48" height="36" loading="lazy" />
+                <span>${r.title}</span>
+              </a>
+            </li>
+          `,
+        )
+        .join('');
+      list.hidden = false;
+    };
+
+    input.addEventListener('focus', () => {
+      void loadIndex();
+    });
+
+    input.addEventListener('input', () => {
+      void loadIndex().then(() => render(input.value));
+    });
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && input.value.trim().length >= 2) {
+        const params = new URLSearchParams({ q: input.value.trim() });
+        window.location.href = `/search/?${params.toString()}`;
+      }
+      if (e.key === 'Escape') {
+        list.hidden = true;
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!container.contains(e.target as Node)) list.hidden = true;
+    });
+  }
+
+  document.querySelectorAll<HTMLElement>('[data-search]').forEach(initBox);
+</script>

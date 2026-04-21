@@ -1,0 +1,92 @@
+---
+// Server-side: render the banner markup hidden by default. Client script decides whether to show.
+---
+<div id="kloopik-consent-banner" class="consent-banner" hidden role="dialog" aria-labelledby="consent-title" aria-describedby="consent-body">
+  <p id="consent-title" class="consent-title">Cookies & tracking</p>
+  <p id="consent-body" class="consent-body">
+    We use Google Analytics to understand traffic, and GameMonetize serves game embeds that may use cookies for ads.
+    You can accept or reject these. Essential site traffic is counted cookielessly via Cloudflare and is not affected.
+  </p>
+  <div class="consent-actions">
+    <button type="button" id="kloopik-consent-reject" class="consent-btn consent-btn-secondary">Reject</button>
+    <button type="button" id="kloopik-consent-accept" class="consent-btn consent-btn-primary">Accept</button>
+  </div>
+</div>
+
+<style>
+  .consent-banner {
+    position: fixed;
+    inset-inline: 1rem;
+    inset-block-end: 1rem;
+    max-width: 32rem;
+    margin-inline: auto;
+    padding: 1rem 1.25rem;
+    background: #111;
+    color: #f5f5f5;
+    border-radius: 0.5rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    font-size: 0.9rem;
+    z-index: 10000;
+  }
+  .consent-title { margin: 0 0 0.25rem; font-weight: 600; }
+  .consent-body { margin: 0 0 0.75rem; line-height: 1.4; }
+  .consent-actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
+  .consent-btn {
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    border: 1px solid transparent;
+    font-size: 0.875rem;
+    cursor: pointer;
+  }
+  .consent-btn-primary { background: #f5f5f5; color: #111; }
+  .consent-btn-secondary { background: transparent; color: #f5f5f5; border-color: rgba(255,255,255,0.4); }
+</style>
+
+<script>
+  import {
+    loadConsent,
+    saveConsent,
+    ACCEPT_ALL,
+    REJECT_ALL,
+    toGtagConsentUpdate,
+    type ConsentState,
+  } from '../lib/consent';
+
+  const CONSENT_EVENT = 'kloopik:consent-changed';
+
+  function applyConsent(state: ConsentState) {
+    saveConsent(state);
+    const update = toGtagConsentUpdate(state);
+    const w = window as any;
+    w.dataLayer = w.dataLayer || [];
+    w.dataLayer.push({ event: 'consent_update', ...update });
+    if (typeof w.gtag === 'function') {
+      w.gtag('consent', 'update', update);
+    }
+    document.dispatchEvent(new CustomEvent(CONSENT_EVENT, { detail: state }));
+    hideBanner();
+  }
+
+  function showBanner() {
+    document.getElementById('kloopik-consent-banner')?.removeAttribute('hidden');
+  }
+
+  function hideBanner() {
+    document.getElementById('kloopik-consent-banner')?.setAttribute('hidden', '');
+  }
+
+  function init() {
+    const existing = loadConsent();
+    if (existing === null) {
+      showBanner();
+    }
+    document.getElementById('kloopik-consent-accept')?.addEventListener('click', () => applyConsent(ACCEPT_ALL));
+    document.getElementById('kloopik-consent-reject')?.addEventListener('click', () => applyConsent(REJECT_ALL));
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+</script>

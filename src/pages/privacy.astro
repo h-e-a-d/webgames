@@ -1,0 +1,48 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const lastUpdated = '2026-04-21';
+---
+<BaseLayout
+  title="Privacy — Kloopik"
+  description="How Kloopik handles analytics and third-party game embeds."
+  canonicalPath="/privacy/"
+>
+  <article class="container static-page">
+    <h1>Privacy</h1>
+    <p><strong>Last updated:</strong> {lastUpdated}</p>
+
+    <h2>What we collect</h2>
+    <p>
+      We use <strong>Cloudflare Web Analytics</strong> to count page views. It is cookieless,
+      does not identify visitors, and runs without your consent.
+    </p>
+    <p>
+      If you accept the consent banner, we also load <strong>Google Analytics</strong> via
+      Google Tag Manager. Google Analytics uses cookies to measure which pages are visited
+      and how users interact with them. We use this to improve the site.
+    </p>
+
+    <h2>Third-party games</h2>
+    <p>
+      Games on Kloopik are embedded from third-party providers (currently GameMonetize).
+      When you press "Play", an iframe from the provider loads. The provider may set their
+      own cookies for ad personalization and to keep the game running. We do not control
+      these cookies.
+    </p>
+
+    <h2>Your choices</h2>
+    <p>
+      You can accept or reject analytics/ads at any time via the consent banner. Clearing your
+      browser data resets your choice. We don't operate user accounts, so there's nothing
+      personal to delete.
+    </p>
+
+    <h2>Contact</h2>
+    <p>Privacy questions: <a href="mailto:privacy@kloopik.com">privacy@kloopik.com</a>.</p>
+  </article>
+</BaseLayout>
+
+<style>
+  .static-page { max-width: 44rem; }
+  .static-page h2 { margin-top: var(--space-8); }
+</style>

@@ -1,0 +1,39 @@
+name: Lighthouse
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  lhci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install
+        run: npm ci
+
+      - name: Wait for Cloudflare Pages preview
+        id: cf
+        uses: WalshyDev/cf-pages-await@v1
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          project: 'kloopik'
+          commitHash: ${{ github.event.pull_request.head.sha }}
+
+      - name: Run Lighthouse CI
+        run: |
+          npx lhci autorun \
+            --collect.url="${{ steps.cf.outputs.url }}/" \
+            --collect.url="${{ steps.cf.outputs.url }}/games/" \
+            --collect.url="${{ steps.cf.outputs.url }}/blog/"
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}

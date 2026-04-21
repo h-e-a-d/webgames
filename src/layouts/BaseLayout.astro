@@ -1,0 +1,126 @@
+---
+import '../styles/global.css';
+import ConsentBanner from '../components/ConsentBanner.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import JsonLd from '../components/JsonLd.astro';
+
+interface Props {
+  title: string;
+  description?: string;
+  canonicalPath?: string;
+  ogImage?: string;
+  jsonLd?: Record<string, unknown> | Array<Record<string, unknown>>;
+  ogType?: 'website' | 'article';
+  noindex?: boolean;
+  slug?: string;
+  collection?: 'games' | 'blog';
+}
+
+const { title, description, canonicalPath, ogImage: ogImageProp, jsonLd, ogType = 'website', noindex = false, slug, collection } = Astro.props;
+const siteUrl = import.meta.env.PUBLIC_SITE_URL;
+const gtmId = import.meta.env.PUBLIC_GTM_ID;
+const canonical = canonicalPath ? `${siteUrl}${canonicalPath}` : `${siteUrl}${Astro.url.pathname}`;
+
+const resolvedOg =
+  ogImageProp
+    ?? (slug && collection ? `/og/${collection}/${slug}.png` : '/og/default.png');
+const ogImageAbs = `${siteUrl}${resolvedOg}`;
+
+const shouldLoadGtm = typeof gtmId === 'string' && gtmId.startsWith('GTM-');
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    {description && <meta name="description" content={description} />}
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="robots" content={noindex ? 'noindex,follow' : 'index,follow'} />
+
+    <meta property="og:type" content={ogType} />
+    <meta property="og:title" content={title} />
+    {description && <meta property="og:description" content={description} />}
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImageAbs} />
+    <meta property="og:site_name" content="Kloopik" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    {description && <meta name="twitter:description" content={description} />}
+    <meta name="twitter:image" content={ogImageAbs} />
+
+    {jsonLd && <JsonLd data={jsonLd} />}
+
+    {shouldLoadGtm && (
+      <>
+        {/* Consent Mode v2: default denied, then pre-GTM update from stored state */}
+        <script is:inline>
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){ dataLayer.push(arguments); }
+          window.gtag = gtag;
+
+          gtag('consent', 'default', {
+            analytics_storage: 'denied',
+            ad_storage: 'denied',
+            ad_user_data: 'denied',
+            ad_personalization: 'denied',
+            wait_for_update: 500
+          });
+
+          try {
+            var raw = localStorage.getItem('kloopik.consent.v1');
+            if (raw) {
+              var parsed = JSON.parse(raw);
+              if (parsed && typeof parsed.analytics === 'boolean' && typeof parsed.ads === 'boolean') {
+                gtag('consent', 'update', {
+                  analytics_storage: parsed.analytics ? 'granted' : 'denied',
+                  ad_storage: parsed.ads ? 'granted' : 'denied',
+                  ad_user_data: parsed.ads ? 'granted' : 'denied',
+                  ad_personalization: parsed.ads ? 'granted' : 'denied'
+                });
+              }
+            }
+          } catch (_) { /* no-op */ }
+
+          gtag('js', new Date());
+        </script>
+        {/* GTM loader */}
+        <script is:inline defer src={`https://www.googletagmanager.com/gtm.js?id=${gtmId}`}></script>
+      </>
+    )}
+  </head>
+  <body>
+    {shouldLoadGtm && (
+      <noscript>
+        <iframe
+          src={`https://www.googletagmanager.com/ns.html?id=${gtmId}`}
+          height="0"
+          width="0"
+          style="display:none;visibility:hidden"
+          title="GTM noscript"
+        ></iframe>
+      </noscript>
+    )}
+    <Header />
+    <main class="page-main">
+      <slot />
+    </main>
+    <Footer />
+    <ConsentBanner />
+
+    {(() => {
+      const token = import.meta.env.PUBLIC_CF_ANALYTICS_TOKEN;
+      const isReal = typeof token === 'string' && /^[a-f0-9]{32}$/i.test(token);
+      return isReal ? (
+        <script
+          is:inline
+          defer
+          src="https://static.cloudflareinsights.com/beacon.min.js"
+          data-cf-beacon={`{"token": "${token}"}`}
+        />
+      ) : null;
+    })()}
+  </body>
+</html>

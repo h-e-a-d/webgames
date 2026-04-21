@@ -1,0 +1,60 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import GameGrid from '../components/GameGrid.astro';
+import { getAllGames, assertSlugsResolve } from '../lib/games';
+import { sortGames } from '../lib/sort';
+import { PINS } from '../data/featured';
+
+const games = await getAllGames();
+
+await assertSlugsResolve([...PINS.home.hero, ...PINS.home.featured], 'PINS.home');
+
+const sortable = games.map((g) => ({
+  slug: g.slug,
+  featured: g.data.featured,
+  rank: g.data.rank,
+  addedAt: g.data.addedAt,
+  categories: g.data.categories,
+}));
+
+const heroSlugs = sortGames(sortable, { surface: 'home-hero', pins: PINS }).map((g) => g.slug).slice(0, 3);
+const featuredSlugs = sortGames(sortable, { surface: 'home-featured', pins: PINS }).map((g) => g.slug).slice(0, 12);
+
+const bySlug = new Map(games.map((g) => [g.slug, g] as const));
+const heroGames = heroSlugs.map((s) => bySlug.get(s)!).filter((g) => g !== undefined);
+const featuredGames = featuredSlugs.map((s) => bySlug.get(s)!).filter((g) => g !== undefined);
+---
+<BaseLayout
+  title="Kloopik — Curated browser games, zero install"
+  description="A curated collection of free browser games. Puzzles, arcade, action, and more — instantly playable, no sign-up."
+  canonicalPath="/"
+>
+  <section class="hero container">
+    <h1>Free browser games, hand-picked.</h1>
+    <p>No installs, no accounts. Just games that are worth your time.</p>
+  </section>
+
+  {heroGames.length > 0 && (
+    <section class="container">
+      <h2>Top picks</h2>
+      <GameGrid games={heroGames} eagerCount={heroGames.length} />
+    </section>
+  )}
+
+  {featuredGames.length > 0 && (
+    <section class="container section-spacing">
+      <h2>Featured</h2>
+      <GameGrid games={featuredGames} eagerCount={8} />
+    </section>
+  )}
+</BaseLayout>
+
+<style>
+  .hero {
+    padding: var(--space-12) 0 var(--space-8);
+    text-align: center;
+  }
+  .hero h1 { font-size: var(--fs-3xl); margin-bottom: var(--space-3); }
+  .hero p { color: var(--color-muted); font-size: var(--fs-lg); margin: 0; }
+  .section-spacing { margin-top: var(--space-10); }
+</style>

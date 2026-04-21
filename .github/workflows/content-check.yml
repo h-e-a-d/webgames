@@ -1,0 +1,34 @@
+name: Content check
+
+on:
+  pull_request:
+    paths:
+      - 'src/content/**'
+      - 'public/thumbnails/**'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install
+        run: npm ci
+
+      - name: Validate content schemas (via astro check)
+        run: npx astro check
+        env:
+          PUBLIC_GTM_ID: GTM-TEST
+          PUBLIC_GA4_ID: G-TEST
+          PUBLIC_CF_ANALYTICS_TOKEN: test-token
+          PUBLIC_SITE_URL: https://www.kloopik.com
+
+      - name: Internal link + thumbnail check
+        run: npm run check:links

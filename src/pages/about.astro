@@ -1,0 +1,31 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="About — Kloopik"
+  description="Kloopik is a hand-curated collection of free browser games."
+  canonicalPath="/about/"
+>
+  <article class="container static-page">
+    <h1>About Kloopik</h1>
+    <p>
+      Kloopik is a hand-curated collection of free browser games. Every game listed
+      here has been played by a human and picked because it's worth your time.
+    </p>
+    <p>
+      We don't publish everything that exists — we publish what we'd recommend to a friend.
+    </p>
+    <h2>How it works</h2>
+    <p>
+      Games are hosted by their original publishers and embedded on Kloopik. We add
+      an editorial review for each, and we organize them into categories and collections.
+    </p>
+    <h2>Contact</h2>
+    <p>Questions or suggestions? Email <a href="mailto:hello@kloopik.com">hello@kloopik.com</a>.</p>
+  </article>
+</BaseLayout>
+
+<style>
+  .static-page { max-width: 44rem; }
+  .static-page h2 { margin-top: var(--space-8); }
+</style>

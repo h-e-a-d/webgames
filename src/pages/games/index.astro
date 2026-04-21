@@ -1,0 +1,42 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import CategoryFilter from '../../components/CategoryFilter.astro';
+import GameGrid from '../../components/GameGrid.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import { getAllGames } from '../../lib/games';
+import { sortGames } from '../../lib/sort';
+import { PINS } from '../../data/featured';
+import { buildBreadcrumbJsonLd } from '../../lib/seo';
+
+const games = await getAllGames();
+
+const sortable = games.map((g) => ({
+  slug: g.slug,
+  featured: g.data.featured,
+  rank: g.data.rank,
+  addedAt: g.data.addedAt,
+  categories: g.data.categories,
+}));
+const orderedSlugs = sortGames(sortable, { surface: 'all', pins: PINS }).map((g) => g.slug);
+const bySlug = new Map(games.map((g) => [g.slug, g] as const));
+const ordered = orderedSlugs.map((s) => bySlug.get(s)!).filter((g) => g !== undefined);
+
+const siteUrl = import.meta.env.PUBLIC_SITE_URL;
+const breadcrumbLd = buildBreadcrumbJsonLd([
+  { name: 'Home', url: `${siteUrl}/` },
+  { name: 'All games', url: `${siteUrl}/games/` },
+]);
+---
+<BaseLayout
+  title="All games — Kloopik"
+  description={`Browse all ${ordered.length} curated browser games on Kloopik. Filter by category.`}
+  canonicalPath="/games/"
+  jsonLd={breadcrumbLd}
+>
+  <div class="container">
+    <Breadcrumbs items={[{ name: 'Home', href: '/' }, { name: 'All games' }]} />
+    <h1>All games</h1>
+    <CategoryFilter activeId="all" />
+    <GameGrid games={ordered} eagerCount={8} />
+  </div>
+</BaseLayout>
