@@ -17,6 +17,7 @@ const { title, embedUrl, thumbnailSrc, thumbnailWidth, thumbnailHeight, orientat
 >
   <div class="game-player__poster">
     <img
+      class="game-player__poster-img"
       src={thumbnailSrc}
       width={thumbnailWidth}
       height={thumbnailHeight}
@@ -42,7 +43,7 @@ const { title, embedUrl, thumbnailSrc, thumbnailWidth, thumbnailHeight, orientat
     aspect-ratio: 16 / 9;
   }
   .game-player[data-orientation='portrait'] { aspect-ratio: 9 / 16; max-width: 24rem; margin: 0 auto; }
-  .game-player__poster, .game-player__poster img {
+  .game-player__poster, .game-player__poster-img {
     position: absolute;
     inset: 0;
     width: 100%;
