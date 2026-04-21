@@ -35,8 +35,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     }
 
     const input = document.querySelector<HTMLInputElement>('[data-search-form] input[name="q"]');
-    const summary = document.querySelector<HTMLElement>('[data-summary]');
-    const list = document.querySelector<HTMLUListElement>('[data-results]');
+    const summary = document.querySelector<HTMLElement>('[data-summary]')!;
+    const list = document.querySelector<HTMLUListElement>('[data-results]')!;
     if (!input || !summary || !list) throw new Error('search page: missing DOM');
 
     const params = new URLSearchParams(window.location.search);
