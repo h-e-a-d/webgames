@@ -5,8 +5,8 @@ providerId: r613bammzs2ki30quv4whybuhua1itwf
 embedUrl: "https://html5.gamemonetize.co/r613bammzs2ki30quv4whybuhua1itwf/"
 thumbnail:
   src: /thumbnails/gamemonetize/terra-craft-world.jpg
-  width: 1280
-  height: 720
+  width: 512
+  height: 384
   alt: Terra Craft World
 categories:
   - action
