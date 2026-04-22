@@ -137,7 +137,20 @@ const { title, embedUrl, thumbnailSrc, thumbnailWidth, thumbnailHeight, orientat
   .game-player.is-fullscreen .game-player__fs .icon-expand   { display: none; }
   .game-player.is-fullscreen .game-player__fs .icon-compress { display: block; }
 
-  /* Fullscreen: fill the viewport regardless of aspect-ratio */
+  /* CSS fullscreen overlay — works on all browsers including iOS */
+  .game-player.is-fullscreen {
+    position: fixed;
+    inset: 0;
+    z-index: 9998;
+    width: 100vw;
+    height: 100vh;
+    max-width: none;
+    aspect-ratio: unset;
+    border-radius: 0;
+    margin: 0;
+  }
+
+  /* Native browser fullscreen (enhancement on supporting browsers) */
   .game-player:fullscreen,
   .game-player:-webkit-full-screen {
     width: 100vw;
@@ -298,31 +311,49 @@ const { title, embedUrl, thumbnailSrc, thumbnailWidth, thumbnailHeight, orientat
       if (fsBtn) fsBtn.hidden = true;
     });
 
-    // Fullscreen toggle (standard + webkit for Safari)
-    function enterFs() {
-      if ('requestFullscreen' in root) {
-        (root as HTMLElement).requestFullscreen().catch(() => {});
-      } else if ('webkitRequestFullscreen' in root) {
-        (root as any).webkitRequestFullscreen();
-      }
-    }
-    function exitFs() {
-      if ('exitFullscreen' in document) {
-        document.exitFullscreen().catch(() => {});
-      } else if ('webkitExitFullscreen' in document) {
-        (document as any).webkitExitFullscreen();
-      }
-    }
-    function isFs() {
-      return document.fullscreenElement === root || (document as any).webkitFullscreenElement === root;
-    }
-    function onFsChange() {
-      const fs = isFs();
-      root.classList.toggle('is-fullscreen', fs);
-      if (fsBtn) fsBtn.setAttribute('aria-label', fs ? 'Exit fullscreen' : 'Enter fullscreen');
+    function setCssFs(on: boolean) {
+      root.classList.toggle('is-fullscreen', on);
+      document.body.style.overflow = on ? 'hidden' : '';
+      if (fsBtn) fsBtn.setAttribute('aria-label', on ? 'Exit fullscreen' : 'Enter fullscreen');
     }
 
-    fsBtn?.addEventListener('click', () => { isFs() ? exitFs() : enterFs(); });
+    fsBtn?.addEventListener('click', () => {
+      const entering = !root.classList.contains('is-fullscreen');
+
+      if (entering) {
+        // Try native fullscreen; fall back to CSS overlay (needed for iOS)
+        const p: Promise<void> | undefined =
+          'requestFullscreen' in root
+            ? (root as HTMLElement).requestFullscreen()
+            : 'webkitRequestFullscreen' in root
+              ? (Promise.resolve(((root as any).webkitRequestFullscreen(), undefined)))
+              : undefined;
+
+        if (p) {
+          p.catch(() => setCssFs(true)); // native failed → CSS fallback
+        } else {
+          setCssFs(true); // API not available → CSS only
+        }
+      } else {
+        // Exit: try native first, then remove CSS class
+        if (document.fullscreenElement || (document as any).webkitFullscreenElement) {
+          const ex: Promise<void> =
+            'exitFullscreen' in document
+              ? document.exitFullscreen()
+              : Promise.resolve(((document as any).webkitExitFullscreen(), undefined));
+          ex.catch(() => {}).finally(() => setCssFs(false));
+        } else {
+          setCssFs(false);
+        }
+      }
+    });
+
+    // Sync class when native fullscreen exits via Esc key
+    function onFsChange() {
+      const nativeFs = document.fullscreenElement === root ||
+                       (document as any).webkitFullscreenElement === root;
+      if (!nativeFs) setCssFs(false);
+    }
     document.addEventListener('fullscreenchange', onFsChange);
     document.addEventListener('webkitfullscreenchange', onFsChange);
   });
