@@ -38,6 +38,18 @@ const { title, embedUrl, thumbnailSrc, thumbnailWidth, thumbnailHeight, orientat
     <span>Loading game…</span>
   </div>
 
+  <!-- Fullscreen button (shown once game is active) -->
+  <button type="button" class="game-player__fs" aria-label="Toggle fullscreen" hidden>
+    <svg class="icon-expand" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+      <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
+      <line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>
+    </svg>
+    <svg class="icon-compress" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+      <polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/>
+      <line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/>
+    </svg>
+  </button>
+
   <!-- Error overlay -->
   <div class="game-player__error" role="alert" aria-live="polite">
     <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
@@ -92,6 +104,34 @@ const { title, embedUrl, thumbnailSrc, thumbnailWidth, thumbnailHeight, orientat
   }
   .game-player__play:hover,
   .game-player__play:focus { background: #fff; }
+
+  /* Fullscreen button */
+  .game-player__fs {
+    position: absolute;
+    bottom: var(--space-3);
+    right: var(--space-3);
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: rgba(0, 0, 0, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: var(--radius-md);
+    color: #fff;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s, background 0.15s;
+    backdrop-filter: blur(4px);
+  }
+  .game-player:hover .game-player__fs,
+  .game-player:focus-within .game-player__fs { opacity: 1; }
+  .game-player__fs:hover { background: rgba(0, 0, 0, 0.8); }
+
+  .game-player__fs .icon-compress { display: none; }
+  .game-player.is-fullscreen .game-player__fs .icon-expand  { display: none; }
+  .game-player.is-fullscreen .game-player__fs .icon-compress { display: block; }
 
   /* Loading */
   .game-player__loading {
@@ -189,6 +229,7 @@ const { title, embedUrl, thumbnailSrc, thumbnailWidth, thumbnailHeight, orientat
     const errorEl   = root.querySelector<HTMLElement>('.game-player__error');
     const retryBtn  = root.querySelector<HTMLButtonElement>('.game-player__retry');
     const openTab   = root.querySelector<HTMLAnchorElement>('.game-player__open-tab');
+    const fsBtn     = root.querySelector<HTMLButtonElement>('.game-player__fs');
     const embedUrl  = root.dataset.embedUrl;
     if (!playBtn || !poster || !embedUrl) return;
 
@@ -227,6 +268,7 @@ const { title, embedUrl, thumbnailSrc, thumbnailWidth, thumbnailHeight, orientat
         clearTimeout(timer);
         loading?.classList.remove('is-visible');
         if (iframe) iframe.style.display = '';
+        if (fsBtn) fsBtn.hidden = false;
       });
 
       iframe.addEventListener('error', showError);
@@ -239,6 +281,22 @@ const { title, embedUrl, thumbnailSrc, thumbnailWidth, thumbnailHeight, orientat
     retryBtn?.addEventListener('click', () => {
       safePoster.style.display = '';
       errorEl?.classList.remove('is-visible');
+      if (fsBtn) fsBtn.hidden = true;
+    });
+
+    // Fullscreen toggle
+    fsBtn?.addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        root.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+    });
+
+    document.addEventListener('fullscreenchange', () => {
+      const isFs = document.fullscreenElement === root;
+      root.classList.toggle('is-fullscreen', isFs);
+      if (fsBtn) fsBtn.setAttribute('aria-label', isFs ? 'Exit fullscreen' : 'Toggle fullscreen');
     });
   });
 </script>
