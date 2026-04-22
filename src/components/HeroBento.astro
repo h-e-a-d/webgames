@@ -1,0 +1,142 @@
+---
+import type { GameEntry } from '../lib/games';
+
+interface Props {
+  games: GameEntry[];
+}
+const { games } = Astro.props;
+const [main, ...rest] = games;
+---
+
+{main && (
+  <div class="hero-bento">
+    <!-- Large primary card -->
+    <a href={`/games/${main.slug}/`} class="bento-card bento-card--primary">
+      <img
+        src={main.data.thumbnail.src}
+        width={main.data.thumbnail.width}
+        height={main.data.thumbnail.height}
+        alt={main.data.title}
+        loading="eager"
+        decoding="async"
+        fetchpriority="high"
+      />
+      <div class="bento-card__overlay">
+        <span class="bento-card__cat">{main.data.categories[0]}</span>
+        <h3 class="bento-card__title">{main.data.title}</h3>
+      </div>
+    </a>
+
+    <!-- Secondary cards -->
+    <div class="bento-secondary">
+      {rest.slice(0, 4).map((game, i) => (
+        <a href={`/games/${game.slug}/`} class="bento-card bento-card--secondary">
+          <img
+            src={game.data.thumbnail.src}
+            width={game.data.thumbnail.width}
+            height={game.data.thumbnail.height}
+            alt={game.data.title}
+            loading={i < 2 ? 'eager' : 'lazy'}
+            decoding="async"
+          />
+          <div class="bento-card__overlay">
+            <span class="bento-card__title bento-card__title--sm">{game.data.title}</span>
+          </div>
+        </a>
+      ))}
+    </div>
+  </div>
+)}
+
+<style>
+  .hero-bento {
+    display: grid;
+    grid-template-columns: 1.65fr 1fr;
+    gap: var(--space-3);
+    height: 420px;
+  }
+
+  .bento-secondary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-3);
+  }
+
+  .bento-card {
+    display: block;
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--radius-xl);
+    background: var(--color-card);
+    height: 100%;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .bento-card:hover {
+    transform: scale(1.015);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.55);
+    text-decoration: none;
+  }
+
+  .bento-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.35s ease;
+  }
+  .bento-card:hover img { transform: scale(1.06); }
+
+  .bento-card__overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to bottom,
+      transparent 35%,
+      rgba(6, 6, 18, 0.92) 100%
+    );
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: var(--space-5);
+    gap: var(--space-1);
+  }
+
+  .bento-card__cat {
+    font-size: var(--fs-xs);
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-accent);
+    display: block;
+  }
+
+  .bento-card__title {
+    font-family: 'Syne', 'Nunito', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.15;
+    margin: 0;
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+  }
+  .bento-card__title--sm {
+    font-size: var(--fs-sm);
+    font-weight: 800;
+  }
+
+  .bento-card--secondary .bento-card__overlay {
+    padding: var(--space-3);
+  }
+
+  @media (max-width: 900px) {
+    .hero-bento {
+      grid-template-columns: 1fr;
+      height: auto;
+    }
+    .bento-card--primary { height: 260px; }
+    .bento-secondary { grid-template-columns: repeat(2, 1fr); height: 200px; }
+  }
+
+  @media (max-width: 520px) {
+    .bento-secondary { display: none; }
+  }
+</style>

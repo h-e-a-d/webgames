@@ -1,67 +1,210 @@
 ---
 import { CATEGORIES } from '../data/categories';
 import SearchBox from './SearchBox.astro';
+
+const path = Astro.url.pathname;
+const isActive = (href: string) =>
+  href === '/' ? path === '/' : path.startsWith(href);
 ---
-<header class="site-header">
-  <div class="container site-header__row">
-    <a href="/" class="site-logo" aria-label="Kloopik home">Kloopik</a>
-    <div class="header-search"><SearchBox /></div>
-    <nav class="site-nav" aria-label="Primary">
-      <ul>
-        <li><a href="/games/">All games</a></li>
-        {CATEGORIES.slice(0, 5).map((c) => (
-          <li><a href={`/categories/${c.id}/`}>{c.name}</a></li>
-        ))}
-        <li><a href="/favorites/">Favorites</a></li>
-        <li><a href="/blog/">Blog</a></li>
-      </ul>
+
+<aside class="site-sidebar" aria-label="Site navigation">
+  <div class="sidebar-inner">
+
+    <!-- Logo -->
+    <a href="/" class="sidebar-logo" aria-label="Kloopik home">
+      <span class="sidebar-logo__mark">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <rect x="2" y="6" width="20" height="13" rx="3" fill="currentColor" opacity="0.2"/>
+          <rect x="2" y="6" width="20" height="13" rx="3" stroke="currentColor" stroke-width="1.5"/>
+          <circle cx="8.5" cy="12.5" r="1.5" fill="currentColor"/>
+          <circle cx="15.5" cy="12.5" r="1.5" fill="currentColor"/>
+          <path d="M10.5 9.5h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M10.5 15.5h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </span>
+      <span class="sidebar-logo__text">Kloopik</span>
+    </a>
+
+    <!-- Search -->
+    <div class="sidebar-search">
+      <SearchBox />
+    </div>
+
+    <!-- Primary nav -->
+    <nav class="sidebar-nav" aria-label="Primary">
+      <a href="/" class:list={['sidebar-nav__item', { active: isActive('/') }]}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+        Home
+      </a>
+      <a href="/games/" class:list={['sidebar-nav__item', { active: isActive('/games/') }]}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <rect x="2" y="6" width="20" height="12" rx="2"/>
+          <path d="M8 12h2m2 0h2M12 10v4" stroke-linecap="round"/>
+        </svg>
+        All Games
+      </a>
+      <a href="/favorites/" class:list={['sidebar-nav__item', { active: isActive('/favorites/') }]}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+        </svg>
+        Favorites
+      </a>
+      <a href="/blog/" class:list={['sidebar-nav__item', { active: isActive('/blog/') }]}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+        </svg>
+        Blog
+      </a>
     </nav>
+
+    <!-- Categories -->
+    <div class="sidebar-divider"></div>
+    <p class="sidebar-section-label">Categories</p>
+    <nav class="sidebar-nav" aria-label="Categories">
+      {CATEGORIES.map((c) => (
+        <a
+          href={`/categories/${c.id}/`}
+          class:list={['sidebar-nav__item', { active: isActive(`/categories/${c.id}/`) }]}
+        >
+          <span class="sidebar-cat-icon" aria-hidden="true">{
+            c.id === 'puzzle'   ? '🧩' :
+            c.id === 'arcade'   ? '🕹️' :
+            c.id === 'action'   ? '⚡' :
+            c.id === 'casual'   ? '🌀' :
+            c.id === 'strategy' ? '♟️' :
+            c.id === 'io'       ? '🌐' : '🎮'
+          }</span>
+          {c.name}
+        </a>
+      ))}
+    </nav>
+
   </div>
-</header>
+</aside>
 
 <style>
-  .site-header {
-    border-bottom: 1px solid var(--color-border);
-    background: var(--color-bg);
-    height: var(--header-h);
-    display: flex;
-    align-items: center;
+  .site-sidebar {
+    background: var(--color-sidebar);
+    border-right: 1px solid var(--color-border);
     position: sticky;
     top: 0;
-    z-index: 50;
+    height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border) transparent;
+    display: flex;
+    flex-direction: column;
   }
-  .site-header__row {
+
+  .sidebar-inner {
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-5) 0 var(--space-8);
+    min-height: 100%;
+  }
+
+  /* Logo */
+  .sidebar-logo {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: var(--space-6);
-    width: 100%;
-  }
-  .site-logo {
-    font-size: var(--fs-lg);
+    gap: var(--space-3);
+    padding: 0 var(--space-5) var(--space-5);
+    color: var(--color-fg);
+    font-family: 'Syne', sans-serif;
+    font-size: 1.2rem;
     font-weight: 800;
-    color: var(--color-fg);
+    letter-spacing: -0.02em;
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: var(--space-4);
   }
-  .site-logo:hover, .site-logo:focus { text-decoration: none; }
-  .site-nav ul {
+  .sidebar-logo:hover { color: var(--color-fg); }
+
+  .sidebar-logo__mark {
     display: flex;
-    gap: var(--space-5);
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: var(--color-accent);
+    border-radius: var(--radius-md);
+    color: white;
+    flex-shrink: 0;
   }
-  .site-nav a {
-    color: var(--color-fg);
+
+  /* Search */
+  .sidebar-search {
+    padding: 0 var(--space-4) var(--space-4);
+  }
+  .sidebar-search :global(.search-box) { max-width: 100%; }
+  .sidebar-search :global(.search-input) {
+    background: var(--color-surface);
+    border-color: var(--color-border);
+    border-radius: var(--radius-lg);
     font-size: var(--fs-sm);
-    font-weight: 500;
+    padding: var(--space-2) var(--space-3);
+    color: var(--color-fg);
   }
-  .header-search {
-    flex: 1;
-    max-width: 300px;
+  .sidebar-search :global(.search-input)::placeholder { color: var(--color-muted); }
+
+  /* Nav */
+  .sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 0 var(--space-3);
   }
-  @media (max-width: 640px) {
-    .site-nav { display: none; }
-    .header-search { display: none; }
+
+  .sidebar-nav__item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-md);
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    color: var(--color-muted);
+    transition: background 0.12s, color 0.12s;
+    cursor: pointer;
+  }
+  .sidebar-nav__item svg { flex-shrink: 0; opacity: 0.8; }
+  .sidebar-nav__item:hover {
+    background: var(--color-surface);
+    color: var(--color-fg);
+  }
+  .sidebar-nav__item.active {
+    background: color-mix(in srgb, var(--color-accent) 15%, transparent);
+    color: var(--color-fg);
+  }
+  .sidebar-nav__item.active svg { opacity: 1; color: var(--color-accent); }
+
+  .sidebar-cat-icon {
+    width: 16px;
+    text-align: center;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+  }
+
+  /* Divider + label */
+  .sidebar-divider {
+    height: 1px;
+    background: var(--color-border);
+    margin: var(--space-4) var(--space-4);
+  }
+
+  .sidebar-section-label {
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-muted);
+    padding: 0 var(--space-5);
+    margin: 0 0 var(--space-2);
   }
 </style>

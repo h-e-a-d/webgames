@@ -1,9 +1,12 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import HeroBento from '../components/HeroBento.astro';
+import GameCard from '../components/GameCard.astro';
 import GameGrid from '../components/GameGrid.astro';
 import { getAllGames, assertSlugsResolve } from '../lib/games';
 import { sortGames } from '../lib/sort';
 import { PINS } from '../data/featured';
+import { CATEGORIES } from '../data/categories';
 
 const games = await getAllGames();
 
@@ -17,44 +20,91 @@ const sortable = games.map((g) => ({
   categories: g.data.categories,
 }));
 
-const heroSlugs = sortGames(sortable, { surface: 'home-hero', pins: PINS }).map((g) => g.slug).slice(0, 3);
+const heroSlugs     = sortGames(sortable, { surface: 'home-hero', pins: PINS }).map((g) => g.slug).slice(0, 5);
 const featuredSlugs = sortGames(sortable, { surface: 'home-featured', pins: PINS }).map((g) => g.slug).slice(0, 12);
+const newSlugs      = sortGames(sortable, { surface: 'all', pins: PINS }).map((g) => g.slug).slice(0, 12);
 
-const bySlug = new Map(games.map((g) => [g.slug, g] as const));
-const heroGames = heroSlugs.map((s) => bySlug.get(s)!).filter((g) => g !== undefined);
-const featuredGames = featuredSlugs.map((s) => bySlug.get(s)!).filter((g) => g !== undefined);
+const bySlug       = new Map(games.map((g) => [g.slug, g] as const));
+const heroGames    = heroSlugs.map((s) => bySlug.get(s)!).filter(Boolean);
+const featuredGames = featuredSlugs.map((s) => bySlug.get(s)!).filter(Boolean);
+const newGames     = newSlugs.map((s) => bySlug.get(s)!).filter(Boolean);
+
+// Per-category sample: 6 games each
+const categoryRows = CATEGORIES.map((cat) => {
+  const slugs = sortGames(sortable, { surface: 'category', pins: PINS, category: cat.id })
+    .map((g) => g.slug)
+    .slice(0, 8);
+  return {
+    cat,
+    games: slugs.map((s) => bySlug.get(s)!).filter(Boolean),
+  };
+}).filter((row) => row.games.length >= 3);
 ---
+
 <BaseLayout
   title="Kloopik — Curated browser games, zero install"
   description="A curated collection of free browser games. Puzzles, arcade, action, and more — instantly playable, no sign-up."
   canonicalPath="/"
 >
-  <section class="hero container">
-    <h1>Free browser games, hand-picked.</h1>
-    <p>No installs, no accounts. Just games that are worth your time.</p>
-  </section>
-
+  <!-- Top picks bento -->
   {heroGames.length > 0 && (
-    <section class="container">
-      <h2>Top picks</h2>
-      <GameGrid games={heroGames} eagerCount={heroGames.length} />
+    <section class="home-section">
+      <div class="section-hd">
+        <h2>Top picks</h2>
+        <a href="/games/" class="section-hd__link">View all →</a>
+      </div>
+      <HeroBento games={heroGames} />
     </section>
   )}
 
+  <!-- Featured horizontal row -->
   {featuredGames.length > 0 && (
-    <section class="container section-spacing">
-      <h2>Featured</h2>
-      <GameGrid games={featuredGames} eagerCount={8} />
+    <section class="home-section">
+      <div class="section-hd">
+        <h2>Featured games</h2>
+        <a href="/games/" class="section-hd__link">View more →</a>
+      </div>
+      <div class="game-row">
+        {featuredGames.map((game, i) => (
+          <GameCard game={game} eager={i < 4} size="md" />
+        ))}
+      </div>
     </section>
   )}
+
+  <!-- New games horizontal row -->
+  {newGames.length > 0 && (
+    <section class="home-section">
+      <div class="section-hd">
+        <h2>New games</h2>
+        <a href="/games/" class="section-hd__link">View more →</a>
+      </div>
+      <div class="game-row">
+        {newGames.map((game, i) => (
+          <GameCard game={game} eager={false} size="md" />
+        ))}
+      </div>
+    </section>
+  )}
+
+  <!-- Category rows -->
+  {categoryRows.map(({ cat, games: catGames }) => (
+    <section class="home-section">
+      <div class="section-hd">
+        <h2>{cat.name}</h2>
+        <a href={`/categories/${cat.id}/`} class="section-hd__link">View more →</a>
+      </div>
+      <div class="game-row">
+        {catGames.map((game) => (
+          <GameCard game={game} eager={false} size="md" />
+        ))}
+      </div>
+    </section>
+  ))}
 </BaseLayout>
 
 <style>
-  .hero {
-    padding: var(--space-12) 0 var(--space-8);
-    text-align: center;
+  .home-section {
+    margin-bottom: var(--space-10);
   }
-  .hero h1 { font-size: var(--fs-3xl); margin-bottom: var(--space-3); }
-  .hero p { color: var(--color-muted); font-size: var(--fs-lg); margin: 0; }
-  .section-spacing { margin-top: var(--space-10); }
 </style>

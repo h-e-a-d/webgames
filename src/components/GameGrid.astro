@@ -10,7 +10,9 @@ const { games, eagerCount = 8 } = Astro.props;
 ---
 <ul class="game-grid" role="list">
   {games.map((game, i) => (
-    <li><GameCard game={game} eager={i < eagerCount} /></li>
+    <li>
+      <GameCard game={game} eager={i < eagerCount} size="lg" />
+    </li>
   ))}
 </ul>
 
@@ -20,8 +22,8 @@ const { games, eagerCount = 8 } = Astro.props;
     padding: 0;
     margin: 0;
     display: grid;
-    gap: var(--space-4);
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: var(--space-3);
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   }
   .game-grid > li { display: contents; }
 </style>

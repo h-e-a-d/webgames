@@ -51,6 +51,9 @@ const shouldLoadGtm = typeof gtmId === 'string' && gtmId.startsWith('GTM-');
     {description && <meta name="twitter:description" content={description} />}
     <meta name="twitter:image" content={ogImageAbs} />
 
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
     {jsonLd && <JsonLd data={jsonLd} />}
 
     {shouldLoadGtm && (
@@ -103,11 +106,17 @@ const shouldLoadGtm = typeof gtmId === 'string' && gtmId.startsWith('GTM-');
         ></iframe>
       </noscript>
     )}
-    <Header />
-    <main class="page-main">
-      <slot />
-    </main>
-    <Footer />
+
+    <div class="layout-root">
+      <Header />
+      <div class="content-root">
+        <main class="page-main">
+          <slot />
+        </main>
+        <Footer />
+      </div>
+    </div>
+
     <ConsentBanner />
 
     {(() => {
