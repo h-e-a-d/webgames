@@ -165,6 +165,5 @@ p { margin: 0 0 var(--space-4); }
 /* Mobile */
 @media (max-width: 768px) {
   .layout-root { grid-template-columns: 1fr; }
-  .site-sidebar { display: none; }
-  .page-main { padding: var(--space-4); }
+  .page-main { padding: var(--space-4); padding-top: calc(var(--header-h) + var(--space-4)); }
 }
