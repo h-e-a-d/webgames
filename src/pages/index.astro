@@ -2,7 +2,6 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import HeroBento from '../components/HeroBento.astro';
 import GameCard from '../components/GameCard.astro';
-import GameGrid from '../components/GameGrid.astro';
 import { getAllGames, assertSlugsResolve } from '../lib/games';
 import { sortGames } from '../lib/sort';
 import { PINS } from '../data/featured';
@@ -80,7 +79,7 @@ const categoryRows = CATEGORIES.map((cat) => {
         <a href="/games/" class="section-hd__link">View more →</a>
       </div>
       <div class="game-row">
-        {newGames.map((game, i) => (
+        {newGames.map((game) => (
           <GameCard game={game} eager={false} size="md" />
         ))}
       </div>
