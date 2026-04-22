@@ -50,14 +50,19 @@ const { title, embedUrl, thumbnailSrc, thumbnailWidth, thumbnailHeight, orientat
     </svg>
   </button>
 
-  <!-- Rotate-device hint (landscape games on portrait touchscreens) -->
-  <div class="game-player__rotate-hint" aria-hidden="true">
-    <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <!-- Rotate-device hint (landscape games on portrait touchscreens) — dismissible banner, non-blocking -->
+  <div class="game-player__rotate-hint" role="status" aria-live="polite" hidden>
+    <svg class="game-player__rotate-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <rect x="5" y="2" width="14" height="20" rx="2"/>
       <path d="M9 18h6"/>
-      <path d="M17 8a5 5 0 0 0-10 0" transform="translate(0 -4)"/>
     </svg>
-    <p>Rotate your device for the best experience</p>
+    <span>Rotate for a better view</span>
+    <button type="button" class="game-player__rotate-dismiss" aria-label="Dismiss rotate hint">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
+        <line x1="18" y1="6" x2="6" y2="18"/>
+        <line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
   </div>
 
   <!-- Error overlay -->
@@ -185,42 +190,63 @@ const { title, embedUrl, thumbnailSrc, thumbnailWidth, thumbnailHeight, orientat
     border-radius: 0;
   }
 
-  /* Rotate-device hint — only surfaces in fullscreen on portrait touchscreens for landscape games */
+  /* Rotate-device hint — small non-blocking banner at top center; dismissible */
   .game-player__rotate-hint {
-    display: none;
     position: absolute;
-    inset: 0;
-    z-index: 9;
-    flex-direction: column;
+    top: calc(var(--space-3) + env(safe-area-inset-top, 0px));
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 11;
+    display: inline-flex;
     align-items: center;
-    justify-content: center;
-    gap: var(--space-3);
-    background: rgba(12, 12, 26, 0.92);
+    gap: var(--space-2);
+    max-width: calc(100% - 6rem);
+    padding: 8px 10px 8px 14px;
+    background: rgba(0, 0, 0, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 999px;
     color: #fff;
-    padding: var(--space-6);
-    text-align: center;
-    pointer-events: none;
-  }
-  .game-player__rotate-hint p {
-    margin: 0;
+    font-size: var(--fs-xs, 13px);
     font-weight: 600;
-    font-size: var(--fs-sm);
-    max-width: 20rem;
-    line-height: 1.4;
+    line-height: 1.2;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    animation: rotate-hint-in 220ms ease-out both;
   }
-  .game-player__rotate-hint svg {
-    animation: rotate-hint 2s ease-in-out infinite;
+  .game-player__rotate-hint[hidden] { display: none; }
+
+  .game-player__rotate-icon {
+    flex-shrink: 0;
+    animation: rotate-hint-wobble 2s ease-in-out infinite;
     transform-origin: center;
   }
-  @keyframes rotate-hint {
-    0%, 40%, 100% { transform: rotate(0deg); }
-    60%, 90% { transform: rotate(-90deg); }
+  @keyframes rotate-hint-wobble {
+    0%, 45%, 100% { transform: rotate(0deg); }
+    65%, 85% { transform: rotate(-90deg); }
   }
-  @media (orientation: portrait) and (hover: none) and (pointer: coarse) {
-    .game-player[data-orientation='landscape'].is-fullscreen .game-player__rotate-hint {
-      display: flex;
-    }
+  @keyframes rotate-hint-in {
+    from { opacity: 0; transform: translate(-50%, -8px); }
+    to   { opacity: 1; transform: translate(-50%, 0); }
   }
+
+  .game-player__rotate-dismiss {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    margin-left: var(--space-1, 4px);
+    padding: 0;
+    background: rgba(255, 255, 255, 0.12);
+    border: 0;
+    border-radius: 999px;
+    color: #fff;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background 0.15s;
+  }
+  .game-player__rotate-dismiss:hover,
+  .game-player__rotate-dismiss:focus-visible { background: rgba(255, 255, 255, 0.24); }
 
   /* Loading */
   .game-player__loading {
@@ -321,6 +347,8 @@ const { title, embedUrl, thumbnailSrc, thumbnailWidth, thumbnailHeight, orientat
     const retryBtn  = root.querySelector<HTMLButtonElement>('.game-player__retry');
     const openTab   = root.querySelector<HTMLAnchorElement>('.game-player__open-tab');
     const fsBtn     = root.querySelector<HTMLButtonElement>('.game-player__fs');
+    const rotateHint   = root.querySelector<HTMLElement>('.game-player__rotate-hint');
+    const rotateDismiss = root.querySelector<HTMLButtonElement>('.game-player__rotate-dismiss');
     const embedUrl  = root.dataset.embedUrl;
     const orientation = root.dataset.orientation ?? 'both';
     if (!playBtn || !poster || !embedUrl) return;
@@ -341,6 +369,43 @@ const { title, embedUrl, thumbnailSrc, thumbnailWidth, thumbnailHeight, orientat
       errorEl?.classList.add('is-visible');
     }
 
+    let rotateHintTimer: ReturnType<typeof setTimeout> | undefined;
+    let rotateHintDismissed = false;
+
+    function updateRotateHint() {
+      if (!rotateHint) return;
+      const inFs = root.classList.contains('is-fullscreen');
+      const portrait = window.matchMedia('(orientation: portrait)').matches;
+      const shouldShow =
+        inFs && isTouch && orientation === 'landscape' && portrait && !rotateHintDismissed;
+      rotateHint.hidden = !shouldShow;
+
+      // Auto-dismiss after 6s so it never feels sticky.
+      clearTimeout(rotateHintTimer);
+      if (shouldShow) {
+        rotateHintTimer = setTimeout(() => {
+          if (rotateHint) rotateHint.hidden = true;
+        }, 6000);
+      }
+    }
+
+    rotateDismiss?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      rotateHintDismissed = true;
+      if (rotateHint) rotateHint.hidden = true;
+      clearTimeout(rotateHintTimer);
+    });
+
+    // iOS Safari: nudge the URL bar into its minimized state when going "fullscreen".
+    // Works best when the page has some scroll height; harmless otherwise.
+    function nudgeUrlBar() {
+      if (!isTouch) return;
+      try {
+        const y = window.scrollY;
+        window.scrollTo(0, Math.max(y, 1));
+      } catch { /* ignore */ }
+    }
+
     function enterFullscreen() {
       // Ensure the exit button is reachable — iframe `load` may fire after FS is active.
       if (fsBtn) fsBtn.hidden = false;
@@ -352,7 +417,10 @@ const { title, embedUrl, thumbnailSrc, thumbnailWidth, thumbnailHeight, orientat
 
       const nativeResult: Promise<void> | undefined = req ? req() : undefined;
 
-      const applyCss = () => setCssFs(true);
+      const applyCss = () => {
+        nudgeUrlBar();
+        setCssFs(true);
+      };
 
       if (nativeResult && typeof nativeResult.then === 'function') {
         nativeResult.then(applyCss).catch(applyCss);
@@ -435,7 +503,17 @@ const { title, embedUrl, thumbnailSrc, thumbnailWidth, thumbnailHeight, orientat
       root.classList.toggle('is-fullscreen', on);
       document.body.style.overflow = on ? 'hidden' : '';
       if (fsBtn) fsBtn.setAttribute('aria-label', on ? 'Exit fullscreen' : 'Enter fullscreen');
+      if (!on) {
+        rotateHintDismissed = false;
+        if (rotateHint) rotateHint.hidden = true;
+        clearTimeout(rotateHintTimer);
+      } else {
+        updateRotateHint();
+      }
     }
+
+    // Re-evaluate hint visibility on orientation changes (rotating to landscape hides it).
+    window.matchMedia('(orientation: portrait)').addEventListener?.('change', updateRotateHint);
 
     fsBtn?.addEventListener('click', () => {
       if (root.classList.contains('is-fullscreen')) {
