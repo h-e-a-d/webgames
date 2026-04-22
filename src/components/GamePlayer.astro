@@ -121,17 +121,31 @@ const { title, embedUrl, thumbnailSrc, thumbnailWidth, thumbnailHeight, orientat
     border-radius: var(--radius-md);
     color: #fff;
     cursor: pointer;
-    opacity: 0;
-    transition: opacity 0.2s, background 0.15s;
+    transition: background 0.15s, opacity 0.2s;
     backdrop-filter: blur(4px);
   }
-  .game-player:hover .game-player__fs,
-  .game-player:focus-within .game-player__fs { opacity: 1; }
-  .game-player__fs:hover { background: rgba(0, 0, 0, 0.8); }
+  .game-player__fs:hover { background: rgba(0, 0, 0, 0.85); }
+
+  /* Hide on desktop until hover; always show on touch devices */
+  @media (hover: hover) {
+    .game-player__fs { opacity: 0; }
+    .game-player:hover .game-player__fs,
+    .game-player:focus-within .game-player__fs { opacity: 1; }
+  }
 
   .game-player__fs .icon-compress { display: none; }
-  .game-player.is-fullscreen .game-player__fs .icon-expand  { display: none; }
+  .game-player.is-fullscreen .game-player__fs .icon-expand   { display: none; }
   .game-player.is-fullscreen .game-player__fs .icon-compress { display: block; }
+
+  /* Fullscreen: fill the viewport regardless of aspect-ratio */
+  .game-player:fullscreen,
+  .game-player:-webkit-full-screen {
+    width: 100vw;
+    height: 100vh;
+    max-width: none;
+    aspect-ratio: unset;
+    border-radius: 0;
+  }
 
   /* Loading */
   .game-player__loading {
@@ -284,19 +298,32 @@ const { title, embedUrl, thumbnailSrc, thumbnailWidth, thumbnailHeight, orientat
       if (fsBtn) fsBtn.hidden = true;
     });
 
-    // Fullscreen toggle
-    fsBtn?.addEventListener('click', () => {
-      if (!document.fullscreenElement) {
-        root.requestFullscreen().catch(() => {});
-      } else {
-        document.exitFullscreen().catch(() => {});
+    // Fullscreen toggle (standard + webkit for Safari)
+    function enterFs() {
+      if ('requestFullscreen' in root) {
+        (root as HTMLElement).requestFullscreen().catch(() => {});
+      } else if ('webkitRequestFullscreen' in root) {
+        (root as any).webkitRequestFullscreen();
       }
-    });
+    }
+    function exitFs() {
+      if ('exitFullscreen' in document) {
+        document.exitFullscreen().catch(() => {});
+      } else if ('webkitExitFullscreen' in document) {
+        (document as any).webkitExitFullscreen();
+      }
+    }
+    function isFs() {
+      return document.fullscreenElement === root || (document as any).webkitFullscreenElement === root;
+    }
+    function onFsChange() {
+      const fs = isFs();
+      root.classList.toggle('is-fullscreen', fs);
+      if (fsBtn) fsBtn.setAttribute('aria-label', fs ? 'Exit fullscreen' : 'Enter fullscreen');
+    }
 
-    document.addEventListener('fullscreenchange', () => {
-      const isFs = document.fullscreenElement === root;
-      root.classList.toggle('is-fullscreen', isFs);
-      if (fsBtn) fsBtn.setAttribute('aria-label', isFs ? 'Exit fullscreen' : 'Toggle fullscreen');
-    });
+    fsBtn?.addEventListener('click', () => { isFs() ? exitFs() : enterFs(); });
+    document.addEventListener('fullscreenchange', onFsChange);
+    document.addEventListener('webkitfullscreenchange', onFsChange);
   });
 </script>
