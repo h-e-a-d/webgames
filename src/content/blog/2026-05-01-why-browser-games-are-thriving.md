@@ -7,8 +7,8 @@ tags:
   - html5
   - gaming trends
 relatedGames:
-  - dinosaur-bone-game
-  - dice-helix-drop
+  - minecraft-creeper-escape
+  - sorting-nuts-puzzle-game
 draft: false
 ---
 
