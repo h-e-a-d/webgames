@@ -23,7 +23,7 @@ export function serializeFrontmatter(game: NormalizedGame, isoDate: string): str
     `providerId: ${yamlString(game.providerId)}`,
     `embedUrl: ${yamlString(game.embedUrl)}`,
     'thumbnail:',
-    `  src: ${yamlString(`/thumbnails/${game.provider}/${game.providerId}.webp`)}`,
+    `  src: ${yamlString(`/thumbnails/${game.provider}/${game.slug}.webp`)}`,
     `  width: ${game.thumbnail.width}`,
     `  height: ${game.thumbnail.height}`,
     `categories:${yamlList(game.categories)}`,

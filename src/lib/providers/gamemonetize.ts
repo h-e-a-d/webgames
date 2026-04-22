@@ -118,7 +118,7 @@ export const gamemonetizeProvider: Provider = {
   id: 'gamemonetize',
   displayName: 'GameMonetize',
   async fetchCatalog(opts?: { limit?: number }): Promise<NormalizedGame[]> {
-    const url = 'https://gamemonetize.com/feed.php?format=0&type=games&popularity=mostplayed&category=all&amount=100';
+    const url = 'https://gamemonetize.com/feed.php?format=0&num=50&page=1';
     const res = await fetch(url);
     if (!res.ok) {
       throw new Error(`GameMonetize feed request failed: ${res.status} ${res.statusText}`);

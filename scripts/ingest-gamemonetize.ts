@@ -30,7 +30,7 @@ async function readExistingSlugs(): Promise<Set<string>> {
 async function downloadThumbnail(game: NormalizedGame): Promise<void> {
   const outDir = join(ROOT, 'public/thumbnails', game.provider);
   await mkdir(outDir, { recursive: true });
-  const outPath = join(outDir, `${game.providerId}.webp`);
+  const outPath = join(outDir, `${game.slug}.webp`);
   try {
     await stat(outPath);
     return;   // already cached
