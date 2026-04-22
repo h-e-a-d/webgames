@@ -172,13 +172,24 @@ const { title, embedUrl, thumbnailSrc, thumbnailWidth, thumbnailHeight, orientat
     margin: 0;
   }
 
-  /* Safe-area insets inside fullscreen so the exit button clears the notch/dynamic island */
+  /* Safe-area insets inside fullscreen so the exit button clears the notch/dynamic island.
+     Smaller + semi-transparent so it doesn't obscure in-game UI (scores, coins, etc.). */
   .game-player.is-fullscreen .game-player__fs {
-    top: calc(var(--space-3) + env(safe-area-inset-top, 0px));
-    right: calc(var(--space-3) + env(safe-area-inset-right, 0px));
-    width: 48px;
-    height: 48px;
+    top: calc(var(--space-2, 8px) + env(safe-area-inset-top, 0px));
+    right: calc(var(--space-2, 8px) + env(safe-area-inset-right, 0px));
+    width: 38px;
+    height: 38px;
+    background: rgba(0, 0, 0, 0.38);
+    border-color: rgba(255, 255, 255, 0.22);
+    opacity: 0.75;
   }
+  .game-player.is-fullscreen .game-player__fs:hover,
+  .game-player.is-fullscreen .game-player__fs:focus-visible,
+  .game-player.is-fullscreen .game-player__fs:active {
+    background: rgba(0, 0, 0, 0.85);
+    opacity: 1;
+  }
+  .game-player.is-fullscreen .game-player__fs svg { width: 18px; height: 18px; }
 
   /* Native browser fullscreen (desktop enhancement) */
   .game-player:fullscreen,
