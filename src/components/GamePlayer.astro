@@ -192,7 +192,11 @@ const { title, embedUrl, thumbnailSrc, thumbnailWidth, thumbnailHeight, orientat
     const embedUrl  = root.dataset.embedUrl;
     if (!playBtn || !poster || !embedUrl) return;
 
-    if (openTab) openTab.href = embedUrl;
+    // Re-assert as non-nullable so closures below satisfy TS
+    const safeEmbedUrl: string = embedUrl;
+    const safePoster: HTMLElement = poster;
+
+    if (openTab) openTab.href = safeEmbedUrl;
 
     let timer: ReturnType<typeof setTimeout>;
     let iframe: HTMLIFrameElement | null = null;
@@ -207,10 +211,10 @@ const { title, embedUrl, thumbnailSrc, thumbnailWidth, thumbnailHeight, orientat
     function launchGame() {
       errorEl?.classList.remove('is-visible');
       loading?.classList.add('is-visible');
-      poster.style.display = 'none';
+      safePoster.style.display = 'none';
 
       iframe = document.createElement('iframe');
-      iframe.src = embedUrl;
+      iframe.src = safeEmbedUrl;
       iframe.allow = 'autoplay; fullscreen';
       iframe.referrerPolicy = 'no-referrer';
       iframe.loading = 'eager';
@@ -233,7 +237,7 @@ const { title, embedUrl, thumbnailSrc, thumbnailWidth, thumbnailHeight, orientat
     playBtn.addEventListener('click', launchGame);
 
     retryBtn?.addEventListener('click', () => {
-      if (poster) poster.style.display = '';
+      safePoster.style.display = '';
       errorEl?.classList.remove('is-visible');
     });
   });
